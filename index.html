@@ -1021,11 +1021,48 @@ textarea::placeholder{ color:var(--faint); }
   align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:var(--sh-accent); }
 .lock-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:1.8rem; letter-spacing:-.03em; margin-bottom:8px; }
 .lock-sub{ font-size:13.5px; color:var(--muted); margin-bottom:24px; line-height:1.55; }
-#pwInput{ width:100%; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
-  padding:15px; color:var(--ink); font-size:16px; text-align:center; letter-spacing:.1em;
-  margin-bottom:12px; font-family:'Work Sans',sans-serif; outline:none; min-height:52px; }
-#pwInput:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
-#pwError{ font-size:12.5px; color:var(--red); min-height:20px; margin-top:12px; }
+#pwError{ font-size:12.5px; color:var(--red); min-height:20px; margin-top:12px; line-height:1.5; }
+
+/* ---------- Continue with Google ----------
+   Replaces the shared password. The password was never security — it sat in the
+   page source of what is now a public repo — and it could not tell two students
+   apart, which is what the once-per-meal rule actually needs.
+
+   Google's branding guidelines want their mark unaltered on a light or white
+   surface, so the button stays white in both themes rather than being themed
+   to match the app. */
+.gbtn{
+  width:100%; min-height:52px; display:flex; align-items:center; justify-content:center; gap:12px;
+  background:#fff; color:#1f1f1f; border:1px solid #dadce0; border-radius:var(--r-md);
+  font-family:'Work Sans',sans-serif; font-size:15.5px; font-weight:600; cursor:pointer;
+  padding:14px 18px; transition:box-shadow .2s ease, transform .12s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,.18);
+}
+.gbtn:hover{ box-shadow:0 3px 10px rgba(0,0,0,.24); }
+.gbtn:active{ transform:scale(.988); }
+.gbtn:disabled{ opacity:.6; cursor:default; transform:none; }
+.gbtn svg{ flex:none; }
+.lock-note{
+  font-size:12px; color:var(--faint); line-height:1.6; margin-top:18px;
+}
+.lock-note a{ color:var(--accent-ink); }
+/* Shown while the session is being restored on boot, so the sign-in button never
+   flashes up in front of somebody who is already signed in. */
+#lockBusy{ font-size:13px; color:var(--muted); min-height:52px; display:flex;
+  align-items:center; justify-content:center; gap:10px; }
+#lockBusy .spin{
+  width:15px; height:15px; border-radius:50%; flex:none;
+  border:2px solid var(--line); border-top-color:var(--accent);
+  animation:lockspin .7s linear infinite;
+}
+@keyframes lockspin{ to{ transform:rotate(360deg); } }
+/* An offline visitor with a stored session gets in; one without gets told why
+   rather than being left looking at a button that cannot work. */
+.lock-offline{
+  border:1px solid var(--accent-line); background:var(--accent-tint);
+  border-radius:var(--r-md); padding:13px 15px; font-size:13px; color:var(--ink);
+  line-height:1.6; margin-bottom:14px; text-align:left;
+}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
@@ -1052,29 +1089,33 @@ textarea::placeholder{ color:var(--faint); }
       </svg>
     </div>
     <div class="lock-title">Mess Menu</div>
-    <div class="lock-sub">Enter the access password to continue.</div>
-    <!-- A real <form> rather than a bare input: Chrome logs "Password field is not
-         contained in a form" otherwise, and on a phone the keyboard shows a Go key
-         instead of a plain return. -->
-    <!-- The <form> wrapper exists purely so the password field sits in one (Chrome warns
-         otherwise) and so password managers behave. Nothing here relies on the form
-         actually SUBMITTING: inside a sandboxed iframe — a chat preview, an embed, some
-         in-app browsers — Chrome blocks submission outright and never fires the submit
-         event, which silently killed both the Unlock button and the Enter key. So the
-         button is type="button" with its own click handler, and Enter is handled on the
-         input directly. onsubmit returns false as a last resort. -->
-    <form id="pwForm" onsubmit="return false;">
-      <!-- There's no real username — it's one shared code. Chrome still wants a username
-           field next to a password field, and giving it one also stops password managers
-           saving the code under a blank entry. -->
-      <input type="text" name="username" value="hostel" autocomplete="username"
-             tabindex="-1" aria-hidden="true" readonly style="display:none">
-      <input type="password" id="pwInput" name="password" placeholder="Password"
-             autocomplete="current-password" inputmode="text" enterkeyhint="go"
-             onkeydown="if(event.key==='Enter'){ event.preventDefault(); attemptUnlock(); }">
-      <button class="submit" type="button" onclick="attemptUnlock()">Unlock</button>
-    </form>
-    <div id="pwError"></div>
+    <div class="lock-sub" id="lockSub">Sign in to see the menu, rate meals and report problems.</div>
+
+    <!-- Shown first and replaced once we know whether there is a session, so a
+         returning student never sees a sign-in button flash past. -->
+    <div id="lockBusy"><span class="spin" aria-hidden="true"></span> Checking your session…</div>
+
+    <div id="lockOffline" class="lock-offline" hidden>
+      You're offline, and there's no saved session on this phone. Sign-in needs a
+      connection — the menu will be here once you're back on wifi.
+    </div>
+
+    <button class="gbtn" id="googleBtn" type="button" onclick="signInWithGoogle()" hidden>
+      <svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div id="pwError" role="alert"></div>
+
+    <div class="lock-note">
+      We only ever see your name and email address.
+      <a href="./privacy.html">Privacy</a> · <a href="./terms.html">Terms</a>
+    </div>
   </div>
 </div>
 
@@ -1238,6 +1279,20 @@ textarea::placeholder{ color:var(--faint); }
     </div>
   </div>
 
+  <!-- Which account you are signed in as, and the way out. Worth showing the
+       email rather than just the name: on a shared phone, "signed in as someone"
+       is not the same as knowing who, and a rating goes on that account. -->
+  <div class="setting" id="accountCard" hidden>
+    <div class="setting-label">
+      <b>Account</b>
+      <span id="accountWho">—</span>
+    </div>
+    <button type="button" class="now-btn" id="signOutBtn" onclick="signOut()"
+            style="width:100%;background:var(--surface-2);color:var(--ink);border:1px solid var(--line)">
+      Sign out
+    </button>
+  </div>
+
   <div class="install" id="installBar">
     <span class="li-ico">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1370,7 +1425,10 @@ textarea::placeholder{ color:var(--faint); }
       <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.4" stroke="currentColor" stroke-width="2"/>
       <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
-    <span>Stays on this device and goes only to the mess committee. Change it any time from the You tab.</span>
+    <!-- This used to say "stays on this device", which stopped being true the moment
+         the roll number moved onto the Google account. Saying so is also the point:
+         it is why you do not retype it on a laptop. -->
+    <span>Saved to your Google account, so you won't be asked again on another phone. Goes only to the mess committee. Change it any time from the You tab.</span>
   </div>
 </div>
 
@@ -1486,6 +1544,16 @@ textarea::placeholder{ color:var(--faint); }
 </div>
 
 <div class="toast" id="toast">Thanks — feedback saved!</div>
+
+<!-- Supabase, served from this repo rather than a CDN.
+
+     Same origin means the service worker caches it with the rest of the shell,
+     so the app still opens with no signal. It is NOT deferred: the boot code
+     below expects window.supabase to exist by the time it runs, and a deferred
+     script would load after it. If this file is missing the app still renders —
+     it just stays on the sign-in screen and says why. -->
+<script src="./supabase.js"></script>
+
 <script>
 
 
@@ -1513,39 +1581,181 @@ textarea::placeholder{ color:var(--faint); }
   };
 })();
 
-/* ---------------- PASSWORD LOCK ---------------- */
-const APP_PASSWORD = "Psg123";
+/* ================= SIGN IN =================
+   Google, through Supabase Auth. This replaces a shared password that was in the
+   page source of a public repo and could not tell two students apart — which is
+   exactly what the once-per-meal rule needs it to do.
 
+   The library is served from this repo rather than a CDN. Same origin means the
+   service worker caches it with the rest of the shell, so a student who has
+   opened the app once still gets in with no signal. A CDN script is a request
+   that fails on hostel wifi, and with sign-in gating everything, a failed script
+   is a blank app.
+   ============================================================================= */
+const SUPABASE_URL = "https://ryxpakwvkeddixwjsono.supabase.co";
+// Publishable, and meant to be public: it is protected by the Row Level Security
+// policies, not by being hidden. The service_role key must NEVER appear here.
+const SUPABASE_KEY = "sb_publishable_e0R8NmRfRimm9sA2KWitrQ_eOuart3h";
+
+let sb = null;          // the Supabase client, once the library has loaded
+let session = null;     // the current session, or null
+let authReady = false;
+
+function initSupabase(){
+  try{
+    if (!window.supabase || !window.supabase.createClient) return null;
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,       // survives a reload, and works offline
+        autoRefreshToken: true,
+        detectSessionInUrl: true    // handles the ?code= we come back with
+      }
+    });
+  }catch(e){ return null; }
+}
+
+function showLock(){
+  document.getElementById('lockScreen').classList.remove('hidden');
+  document.body.classList.add('locked');
+}
 function hideLock(){
   document.getElementById('lockScreen').classList.add('hidden');
   document.body.classList.remove('locked');
 }
-async function checkStoredUnlock(){
-  try{
-    if (window.storage){
-      const res = await window.storage.get('device_unlocked', false);
-      if (res && res.value === 'true') return true;
-    }
-  }catch(e){ /* not unlocked yet */ }
-  return false;
+function lockBusy(on){
+  const b = document.getElementById('lockBusy');
+  const g = document.getElementById('googleBtn');
+  if (b) b.hidden = !on;
+  if (g) g.hidden = on;
 }
-async function attemptUnlock(){
-  const input = document.getElementById('pwInput');
-  if (input.value === APP_PASSWORD){
-    hideLock();
-    if (window.storage){
-      try{ await window.storage.set('device_unlocked', 'true', false); }catch(e){ /* non-fatal */ }
-    }
-  }else{
-    document.getElementById('pwError').textContent = "Incorrect password — try again.";
-    input.value = "";
-    const card = document.getElementById('lockCard');
-    card.classList.remove('shake');
-    void card.offsetWidth; // restart animation
-    card.classList.add('shake');
+function lockError(msg){
+  const el = document.getElementById('pwError');
+  if (el) el.textContent = msg || '';
+  if (!msg) return;
+  const card = document.getElementById('lockCard');
+  if (!card) return;
+  card.classList.remove('shake');
+  void card.offsetWidth;            // restart the animation
+  card.classList.add('shake');
+}
+
+/* Coming back from Google lands on this same page. Sending the browser to
+   origin + pathname — rather than a hard-coded address — is what lets the same
+   file work on localhost and on GitHub Pages without a build-time switch. Both
+   have to be listed in Supabase's Redirect URLs with a ** suffix. */
+function appUrl(){
+  return window.location.origin + window.location.pathname;
+}
+
+async function signInWithGoogle(){
+  const btn = document.getElementById('googleBtn');
+  lockError('');
+  if (!sb){
+    lockError("Sign-in isn't available — supabase.js didn't load. Check your connection and reload.");
+    return;
+  }
+  if (!navigator.onLine){
+    lockError("You're offline. Signing in for the first time needs a connection.");
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try{
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: appUrl() }
+    });
+    // On success the browser navigates away, so reaching here means it didn't.
+    if (error) throw error;
+  }catch(err){
+    if (btn) btn.disabled = false;
+    lockError(err && err.message ? err.message : 'Could not start sign-in. Try again.');
   }
 }
-(async () => { if (await checkStoredUnlock()) hideLock(); })();
+
+async function signOut(){
+  if (!sb) return;
+  haptic(8);
+  try{ await sb.auth.signOut(); }catch(e){ /* clearing locally is what matters */ }
+  session = null;
+  identity = null;
+  try{ if (window.storage) await window.storage.set('student_identity', '', false); }catch(e){}
+  location.reload();
+}
+
+/* Is there a stored session on this device, even one we cannot verify right now?
+   Used only to decide whether an OFFLINE visitor gets to read the cached menu.
+   It is not a security decision: every write is checked server-side against a
+   real token, so an expired one buys nothing but a look at yesterday's menu. */
+function hasStoredSession(){
+  try{
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) return true;
+    }
+  }catch(e){ /* storage blocked */ }
+  return false;
+}
+
+async function bootAuth(){
+  lockBusy(true);
+  sb = initSupabase();
+
+  if (!sb){
+    lockBusy(false);
+    document.getElementById('googleBtn').hidden = true;
+    lockError("Sign-in isn't available — supabase.js didn't load. Reload the page.");
+    return;
+  }
+
+  try{
+    const { data } = await sb.auth.getSession();
+    session = data ? data.session : null;
+  }catch(e){ session = null; }
+
+  // React to sign-in, sign-out and token refresh from anywhere, including the
+  // redirect back from Google, which resolves after this function has returned.
+  sb.auth.onAuthStateChange((event, s) => {
+    session = s || null;
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION'){
+      if (session) afterSignIn();
+    }
+    if (event === 'SIGNED_OUT'){ showLock(); lockBusy(false); }
+  });
+
+  authReady = true;
+  lockBusy(false);
+
+  if (session){
+    await afterSignIn();
+  } else if (!navigator.onLine && hasStoredSession()){
+    // Signed in before, no signal now: let them read the cached menu.
+    document.getElementById('lockOffline').hidden = true;
+    hideLock();
+  } else {
+    if (!navigator.onLine){
+      document.getElementById('lockOffline').hidden = false;
+      document.getElementById('googleBtn').hidden = true;
+    }
+    showLock();
+  }
+}
+
+/* Google knows your name and your email. It has no idea what your roll number
+   is, and the mess committee needs one to chase anything up — so it is asked for
+   once, stored on the account rather than the device, and never asked again. */
+let signedInOnce = false;
+async function afterSignIn(){
+  if (signedInOnce) return;
+  signedInOnce = true;
+  await loadIdentity();
+  hideLock();
+  renderWhoami();
+  renderAccount();
+  if (!identity || !identity.roll){
+    // Give the lock screen time to fade before another panel slides up.
+    setTimeout(() => openIdentity(), 420);
+  }
+}
 
 /* ---------------- THEME (light / dark) ---------------- */
 // Chrome refuses (and logs a warning about) vibrate before the user has interacted,
@@ -2173,21 +2383,74 @@ function fbKey(mess, day){ return `feedback_${mess}_${day}`; }
    shared with anyone else and "Change" lets them clear it. */
 let identity = null;   // { name, roll }
 
+/* Identity now comes from the signed-in account, not the device.
+
+   The name arrives from Google. The roll number does not — Google has never
+   heard of it — so it is typed once and kept in the user's own auth metadata,
+   which means it follows them to a laptop instead of being retyped, and a
+   cleared browser does not lose it.
+
+   localStorage is still written, but only as an offline cache: it is what lets
+   the whoami bar say who you are when the phone has no signal. The account is
+   the source of truth; the cache is never trusted over it. */
 async function loadIdentity(){
+  identity = null;
+
+  // 1. the account, when we have a session
+  try{
+    if (sb && session && session.user){
+      const u = session.user;
+      const meta = u.user_metadata || {};
+      const name = (meta.full_name || meta.name || '').trim();
+      const roll = (meta.roll || '').trim().toUpperCase();
+      if (name || roll){
+        identity = { name: name || '', roll: roll || '' };
+      }
+      if (identity && identity.name && identity.roll){
+        try{
+          if (window.storage) await window.storage.set('student_identity', JSON.stringify(identity), false);
+        }catch(e){ /* cache is optional */ }
+        return;
+      }
+    }
+  }catch(e){ /* fall through to the cache */ }
+
+  // 2. the offline cache — only if the account gave us nothing usable
   try{
     if (!window.storage) return;
     const res = await window.storage.get('student_identity', false);
     if (res && res.value){
       const p = JSON.parse(res.value);
-      if (p && p.name && p.roll) identity = { name: String(p.name), roll: String(p.roll) };
+      if (p && p.name && p.roll && !identity) identity = { name: String(p.name), roll: String(p.roll) };
+      // A name from Google plus a roll from the cache is a valid pairing too.
+      if (p && p.roll && identity && !identity.roll) identity.roll = String(p.roll);
     }
-  }catch(e){ identity = null; }
+  }catch(e){ /* leave identity as it is */ }
 }
+
 async function saveIdentity(name, roll){
   identity = { name: name.trim(), roll: roll.trim().toUpperCase() };
+  // Cache first, so a failed network call still leaves the app usable.
   try{
     if (window.storage) await window.storage.set('student_identity', JSON.stringify(identity), false);
   }catch(e){ /* non-fatal — it just gets asked again next time */ }
+  // Then the account, which is what makes it follow the student to another device.
+  try{
+    if (sb && session){
+      const { data, error } = await sb.auth.updateUser({
+        data: { roll: identity.roll, full_name: identity.name }
+      });
+      if (!error && data && data.user){
+        session = Object.assign({}, session, { user: data.user });
+      }
+    }
+  }catch(e){ /* the cache still has it; it syncs on the next save */ }
+}
+
+/* The email address behind the session — shown in More so it is obvious which
+   account you are signed in as, and never used as a display name. */
+function accountEmail(){
+  try{ return (session && session.user && session.user.email) || ''; }catch(e){ return ''; }
 }
 
 /* The once-per-meal lock keys on the ROLL NUMBER, not the device.
@@ -2496,12 +2759,34 @@ function showIdentityError(msg, fieldId){
 function clearIdentityErrorMarks(){
   ['idNameField','idRollField'].forEach(id => document.getElementById(id)?.classList.remove('bad'));
 }
+/* Shows which Google account is signed in, under Settings. */
+function renderAccount(){
+  const card = document.getElementById('accountCard');
+  const who  = document.getElementById('accountWho');
+  if (!card) return;
+  const email = accountEmail();
+  card.hidden = !email;
+  if (who && email){
+    const nm = (identity && identity.name) ? identity.name : '';
+    who.textContent = nm ? `${nm} · ${email}` : email;
+  }
+}
+
 function openIdentity(){
   clearIdentityError();
   const n = document.getElementById('idName');
   const r = document.getElementById('idRoll');
-  if (n) n.value = identity ? identity.name : '';
-  if (r) r.value = identity ? identity.roll : '';
+  // The name Google gave us is a much better starting point than an empty box,
+  // and it is still editable — Google names come through shouted in full caps
+  // more often than not.
+  const googleName = (() => {
+    try{
+      const m = (session && session.user && session.user.user_metadata) || {};
+      return (m.full_name || m.name || '').trim();
+    }catch(e){ return ''; }
+  })();
+  if (n) n.value = (identity && identity.name) ? identity.name : googleName;
+  if (r) r.value = (identity && identity.roll) ? identity.roll : '';
   // Reopening with a roll number already saved should show it as valid, not neutral.
   const rf = document.getElementById('idRollField');
   if (rf) rf.classList.toggle('ok', !!(r && ROLL_PATTERN.test(r.value)));
@@ -2538,6 +2823,7 @@ async function submitIdentity(){
   haptic(8);
   await saveIdentity(name, roll);
   renderWhoami();
+  renderAccount();
   document.getElementById('idBackdrop').classList.remove('show');
   document.getElementById('idSheet').classList.remove('show');
   const next = pendingAfterIdentity;
@@ -3746,6 +4032,14 @@ async function installApp(){
   runSearch();
   renderToday();
   renderYou();
+
+  /* Auth comes LAST, and deliberately.
+
+     Everything above renders behind the lock screen, so by the time the session
+     resolves the app underneath is already drawn — no blank frame between the
+     sign-in button disappearing and the menu appearing. It also means a failure
+     in auth leaves a working, if locked, page rather than a dead one. */
+  await bootAuth();
 })();
 </script>
 </body>

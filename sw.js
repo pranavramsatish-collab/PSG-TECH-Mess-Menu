@@ -8,7 +8,7 @@
 
    Bump CACHE_VERSION whenever you deploy, or returning users keep the old shell until
    their browser happens to revalidate. */
-const CACHE_VERSION = 'v19';
+const CACHE_VERSION = 'v20';
 const CACHE_NAME = `psg-mess-${CACHE_VERSION}`;
 
 // Relative, not absolute. If this is ever served from a sub-path (GitHub Pages puts
@@ -20,6 +20,11 @@ const CACHE_NAME = `psg-mess-${CACHE_VERSION}`;
 const SHELL = [
   './',
   './index.html',
+  // Sign-in gates the whole app now, so the auth library has to be part of the
+  // offline shell. Loaded from a CDN it would be a cross-origin request this
+  // worker deliberately does not touch — and on hostel wifi, a script that
+  // fails to load is a blank app rather than a cached menu.
+  './supabase.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
