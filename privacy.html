@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy — PSG Tech Mess Menu</title>
+<meta name="description" content="What the PSG Tech hostel mess menu app collects, who can see it, and how to have it removed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12150f; --surface:#1c2116; --line:rgba(244,239,225,.11);
+  --accent:#e7a93c; --on-accent:#1b1f14;
+  --ink:#f4efe1; --muted:rgba(244,239,225,.72); --faint:rgba(244,239,225,.54);
+}
+@media (prefers-color-scheme:light){
+  :root{ --bg:#f7f3e8; --surface:#fffdf7; --line:rgba(30,34,24,.14);
+         --accent:#b9761a; --on-accent:#fffdf7;
+         --ink:#1e2218; --muted:rgba(30,34,24,.74); --faint:rgba(30,34,24,.55); }
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Work Sans',system-ui,sans-serif; line-height:1.68; font-size:16.5px;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:660px; margin:0 auto; padding:clamp(28px,7vw,64px) clamp(18px,5vw,32px) 90px; }
+.back{
+  display:inline-flex; align-items:center; gap:8px; min-height:44px;
+  color:var(--accent); text-decoration:none; font-size:14.5px; font-weight:500; margin-bottom:26px;
+}
+.back:hover{ text-decoration:underline; }
+h1{ font-family:'Fraunces',Georgia,serif; font-weight:600; letter-spacing:-.02em;
+    font-size:clamp(30px,6vw,44px); line-height:1.1; margin:0 0 10px; }
+.sub{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--faint); margin-bottom:34px; }
+h2{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(20px,3.4vw,25px);
+    letter-spacing:-.01em; margin:40px 0 12px; }
+p{ margin:0 0 16px; color:var(--muted); }
+strong{ color:var(--ink); font-weight:600; }
+ul{ margin:0 0 16px; padding-left:22px; color:var(--muted); }
+li{ margin-bottom:9px; }
+a{ color:var(--accent); }
+.box{
+  border:1px solid var(--line); background:var(--surface); border-radius:16px;
+  padding:20px 22px; margin:24px 0;
+}
+.box p:last-child{ margin-bottom:0; }
+.tag{
+  display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9.5px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:99px; padding:4px 10px; margin-bottom:12px;
+}
+footer{ margin-top:48px; padding-top:22px; border-top:1px solid var(--line);
+        color:var(--faint); font-size:13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="./">← Back to the app</a>
+
+  <h1>Privacy</h1>
+  <div class="sub">PSG Tech Mess Menu · Last updated 20 September 2026</div>
+
+  <div class="box">
+    <span class="tag">In one line</span>
+    <p>This app stores what you rate and what you report, along with your name, roll
+       number and the email address of the Google account you sign in with, so the mess
+       committee can act on it and so you can't rate the same meal twice.</p>
+  </div>
+
+  <h2>Who runs this</h2>
+  <p>The app is built and run by <strong>Pranav Ram Satish</strong>, a student at PSG
+     College of Technology. It is <strong>not an official</strong> PSG College of
+     Technology application and is not operated by the college or by the hostel
+     administration. Contact:
+     <a href="mailto:pranavram.sd@gmail.com">pranavram.sd@gmail.com</a>.</p>
+
+  <h2>What is collected</h2>
+  <p>Nothing is collected until you rate a meal or report an issue. Browsing the menu
+     collects nothing at all.</p>
+  <ul>
+    <li><strong>Your Google account</strong> — when you sign in, the app receives your
+        email address, your name, and an account identifier from Google. It does not
+        receive your password, your contacts, your files, or anything else in your
+        Google account.</li>
+    <li><strong>Your name and roll number</strong> — as you enter them.</li>
+    <li><strong>Ratings</strong> — which mess and meal, on which date, a score out of
+        five, and a comment if you write one.</li>
+    <li><strong>Reports</strong> — which mess, what you wrote, and a photo if you
+        attach one.</li>
+  </ul>
+
+  <h2>What is not collected</h2>
+  <ul>
+    <li>No location, ever.</li>
+    <li>No contacts, photos or files, apart from a photo you deliberately attach to a
+        report.</li>
+    <li>No advertising or analytics trackers of any kind. There are no third-party
+        scripts on the page beyond the web font.</li>
+  </ul>
+
+  <h2>Who can see it</h2>
+  <ul>
+    <li><strong>The mess committee</strong> can see ratings and reports, including the
+        name and roll number attached to them. That is the point: a report with nobody
+        behind it can't be followed up.</li>
+    <li><strong>Other students</strong> see only the <em>average</em> score for a meal.
+        They cannot see who gave which score, and they cannot see your reports.</li>
+    <li><strong>Nobody else.</strong> Nothing is sold, shared, or handed to any third
+        party. The database refuses to return another student's reports even if the app
+        asks for them.</li>
+  </ul>
+
+  <h2>Where it is stored</h2>
+  <p>In a <a href="https://supabase.com" rel="noopener">Supabase</a> database (hosted
+     PostgreSQL). Sign-in is handled by Supabase Auth using Google as the identity
+     provider. Data is held for as long as the app runs; there is no fixed deletion
+     schedule.</p>
+  <p>Your device also stores a few small settings locally — your theme choice, your name
+     and roll number so you don't retype them, and which meals you have already rated.
+     Those never leave your phone, and clearing your browser data removes them.</p>
+
+  <h2>Getting your data removed</h2>
+  <p>Email <a href="mailto:pranavram.sd@gmail.com">pranavram.sd@gmail.com</a> from the
+     address you signed in with and say what you want removed — a single rating, a
+     single report, or everything. It will be deleted from the database. Removing a
+     rating changes the average for that meal, which is expected.</p>
+  <p>You can also revoke the app's access to your Google account at any time from
+     <a href="https://myaccount.google.com/permissions" rel="noopener">your Google
+     account permissions page</a>. That stops future sign-ins; it does not delete what
+     is already stored, so email as well if that is what you want.</p>
+
+  <h2>Two things worth saying plainly</h2>
+  <p><strong>Reports are not anonymous.</strong> Your name and roll number go with them.
+     That is what lets the committee come back to you with an answer — and it is also a
+     reason to think before you write something. If you want to raise something
+     anonymously, this is not the right channel.</p>
+  <p><strong>Signing in with Google proves you have a Google account, not that you live
+     in the hostel.</strong> Anyone with a Google account can currently sign in.</p>
+
+  <h2>Changes</h2>
+  <p>If this changes, the date at the top changes with it. The app is small and run by
+     one student; there is no mailing list to notify.</p>
+
+  <footer>
+    PSG Tech Mess Menu · an independent student project ·
+    <a href="./terms.html">Terms</a> · <a href="./">The app</a>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,3752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+<title>PSG Tech Hostel — Mess Menu</title>
+<meta name="description" content="Check both hostel mess menus before you walk down. Rate meals, report issues, track what the committee did.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mess Menu">
+<meta name="theme-color" content="#12150f" id="themeColorMeta">
+<meta property="og:title" content="PSG Tech Hostel — Mess Menu">
+<meta property="og:description" content="Know what's cooking before you walk down.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Phone-first app shell. Four views behind a bottom tab bar —
+   the thumb lives at the bottom of the screen, so navigation
+   does too. Light green palette; night mode is deep green.
+   ============================================================ */
+:root{
+  --bg:#12150f; --bg-2:#171b14;
+  --surface:#1c2116; --surface-2:#222819;
+  --line:rgba(244,239,225,.11); --line-soft:rgba(244,239,225,.07);
+  /* Turmeric is a BRIGHT colour, so it plays three different roles and they
+     need three different values — conflating them is how you get white text
+     on yellow. --accent fills, --accent-ink writes on the page, --on-accent
+     writes on top of a turmeric fill. */
+  --accent:#e7a93c;            /* fills: buttons, selected chips */
+  --accent-ink:#e7a93c;        /* accent-coloured TEXT on the page background */
+  --accent-deep:#f0bb5c;
+  --accent-soft:rgba(231,169,60,.14);
+  --accent-tint:rgba(231,169,60,.07);
+  --on-accent:#1b1f14;         /* text/icons ON a turmeric fill — never white */
+  --second:#8aab5a;            /* curry */
+  --ink:#f4efe1; --ink-2:rgba(244,239,225,.82);
+  --muted:rgba(244,239,225,.68); --faint:rgba(244,239,225,.56);
+  --red:#d1503a;               /* chili */
+  --red-soft:rgba(209,80,58,.14);
+  --accent-line:rgba(231,169,60,.34);   /* accent-tinted borders */
+  --scheme:dark; --grain:.14;
+
+  /* Highlight fills — deliberately IDENTICAL in both themes. These two chips have to be
+     the loudest thing on a meal card either way, and a token that shifts underneath them
+     is exactly how they ended up invisible before. Fixed fill + fixed ink means one
+     contrast figure to check instead of four. */
+  --paid-fill:#e9a72f;    --paid-ink:#221806;     --paid-glow:rgba(233,167,47,.3);
+  --special-fill:#c2325f; --special-ink:#fff4f7;  --special-glow:rgba(194,50,95,.38);
+
+  /* Rest-of-today rows: --surface on --bg is barely a step in dark mode, which is why
+     that list reads as a grey smear. These lift it and give each row a warm edge. */
+  --mini-bg:linear-gradient(160deg,#303827 0%,#242a1c 100%);
+  --mini-line:rgba(231,169,60,.3);
+  --mini-rail:#f0bb5c;
+  /* Clock in the top bar. */
+  --clock-ink:#f0bb5c;
+  --sh-sm:0 1px 3px rgba(0,0,0,.3);
+  --sh-md:0 8px 22px rgba(0,0,0,.34);
+  --sh-lg:0 18px 48px rgba(0,0,0,.44);
+  --sh-accent:0 6px 20px rgba(231,169,60,.26);
+  --top:env(safe-area-inset-top,0px);
+  --bot:env(safe-area-inset-bottom,0px);
+  --edge:clamp(16px,4.5vw,40px);
+  --tabh:64px;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:26px;
+}
+/* Day mode: warm paper rather than white, so it still reads as the same product. */
+body.light{
+  --bg:#f7f3e9; --bg-2:#fffdf7;
+  --surface:#fffdf7; --surface-2:#f4efe2;
+  --line:rgba(43,38,25,.13); --line-soft:rgba(43,38,25,.07);
+  --accent:#dd9f2b;            /* stays vivid — it's a fill, and it carries dark text */
+  --accent-ink:#6d4a11;        /* accent TEXT on paper goes deeper — 10px labels need 4.5:1 */
+  --accent-deep:#6d4a11;
+  --accent-soft:rgba(181,125,29,.14); --accent-tint:rgba(181,125,29,.06);
+  --on-accent:#20260f;
+  --second:#6d8f42;
+  --ink:#22251a; --ink-2:rgba(34,37,26,.82);
+  --muted:rgba(34,37,26,.72); --faint:rgba(34,37,26,.64);
+  --red:#b8402c; --red-soft:rgba(184,64,44,.1);
+  --accent-line:rgba(109,74,17,.32);
+  --scheme:light; --grain:.05;
+
+  /* --paid-* and --special-* are deliberately NOT redefined — see the note above. */
+  --mini-bg:linear-gradient(160deg,#fffdf7 0%,#fffbf0 100%);
+  --mini-line:rgba(109,74,17,.26);
+  --mini-rail:#c88e26;
+  --clock-ink:#6d4a11;
+  --sh-sm:0 1px 2px rgba(90,74,36,.06),0 2px 8px rgba(90,74,36,.05);
+  --sh-md:0 4px 10px rgba(90,74,36,.06),0 12px 28px rgba(90,74,36,.08);
+  --sh-lg:0 10px 24px rgba(90,74,36,.08),0 28px 64px rgba(90,74,36,.11);
+  --sh-accent:0 6px 18px rgba(181,125,29,.24);
+}
+/* Ambient warmth behind everything — the flat version felt clinical without it. */
+.bg-layer{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+/* No will-change, and no animation (see below). `will-change:transform` promotes each
+   glow to its own compositor layer and KEEPS it there — three permanently-promoted
+   80px-blurred layers is memory a cheap phone would rather spend on scrolling. */
+.bg-glow{ position:absolute; border-radius:50%; filter:blur(80px); }
+.g1{ top:-26%; left:50%; width:min(900px,150vw); height:min(640px,80vh); transform:translateX(-50%);
+  background:radial-gradient(ellipse at 50% 40%,rgba(231,169,60,.20) 0%,rgba(231,169,60,.05) 45%,transparent 70%);
+  }
+.g2{ top:46%; left:-20%; width:min(680px,120vw); height:min(560px,66vh);
+  background:radial-gradient(ellipse at 40% 50%,rgba(209,80,58,.16) 0%,transparent 66%);
+  }
+.g3{ top:104%; right:-22%; width:min(600px,100vw); height:min(520px,60vh);
+  background:radial-gradient(ellipse at 60% 50%,rgba(138,171,90,.13) 0%,transparent 68%);
+  }
+body.light .g1{ background:radial-gradient(ellipse at 50% 40%,rgba(231,169,60,.30) 0%,transparent 66%); }
+body.light .g2{ background:radial-gradient(ellipse at 40% 50%,rgba(209,80,58,.16) 0%,transparent 64%); }
+body.light .g3{ background:radial-gradient(ellipse at 60% 50%,rgba(138,171,90,.18) 0%,transparent 66%); }
+/* The three glows used to drift on 26s, 32s and 38s infinite loops. Each is an 80px
+   blur over a large area, so animating them is continuous GPU work for the entire time
+   the app is open — battery a student is spending on a motion they cannot actually
+   perceive, because a 26-second cycle is invisible unless you sit and stare at it.
+   Static glows look identical at any given moment and cost nothing once painted. */
+.bg-grain{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:var(--grain);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+/* content sits above the ambience */
+.topbar,main,.tabbar{ position:relative; z-index:2; }
+.topbar{ z-index:50; } .tabbar{ z-index:60; }
+
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+/* `hidden` is only a default of `display:none`, so ANY rule that sets display on the
+   element beats it. That has now bitten three separate times here: the tab badge
+   rendering a literal "0" (.tab .badge{display:flex}), the rating sheet's pickers
+   staying on screen while .hidden was true (.fields{display:grid}), and the swipe hint
+   refusing to retire (.swipe-hint{display:flex}). One rule, once, rather than
+   remembering to guard every future component. */
+[hidden]{ display:none !important; }
+
+/* Short viewport — a phone turned sideways, or the on-screen keyboard eating 40% of the
+   screen. The sheet scrolls, so the submit button ends up below the fold and looks like
+   it isn't there. Pinning it to the bottom of the sheet keeps the action in reach while
+   the fields above it scroll underneath. */
+@media (max-height:620px){
+  .sheet .submit{
+    position:sticky; bottom:0; z-index:3;
+    box-shadow:var(--sh-accent), 0 -10px 18px -6px var(--surface);
+  }
+  .sheet .shared-note{ padding-top:10px; }
+  .id-head{ padding:2px 30px 14px; }
+  .id-mark{ width:42px; height:42px; margin-bottom:10px; border-radius:13px; }
+  .id-title{ font-size:1.25rem; }
+}
+
+/* Available to a screen reader, invisible on screen. */
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+/* Two things that make a web app feel like a web page rather than an app on a phone:
+   the grey-blue flash Android paints over any tapped element, and the text-selection
+   callout that appears when a button is long-pressed. Both are off here; every tappable
+   thing already has its own :active state, which is the feedback that belongs. Text the
+   user might actually want to copy — dish names, comments, reference numbers — is opted
+   back in below. */
+html{ -webkit-tap-highlight-color:transparent; }
+button, .tab, .day, .chip, .fchip, .seg button, .seg3-btn, .star, .sugg-chip, .hitchip, .whoami, .ctx{
+  -webkit-user-select:none; user-select:none;
+}
+.mini-items, .meal-name, .says .sl, .mysub-comment, .dish-name, .now-meal{
+  -webkit-user-select:text; user-select:text;
+}
+html{ -webkit-text-size-adjust:100%; }
+body{
+  font-family:'Work Sans',system-ui,-apple-system,sans-serif;
+  background:var(--bg); color:var(--ink);
+  min-height:100svh; overflow-x:hidden;
+  overscroll-behavior-y:none;
+  color-scheme:var(--scheme); line-height:1.6;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  transition:background .3s ease,color .3s ease;
+}
+body.locked{ overflow:hidden; height:100svh; }
+::selection{ background:var(--accent-soft); color:var(--accent-deep); }
+button,a{ -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+/* Every tappable thing clears the 44px comfortable-target floor. */
+button,a[role="button"],.tap{ min-height:44px; }
+
+.wrap{ width:100%; max-width:760px; margin:0 auto; padding-inline:var(--edge); }
+h1,h2,h3{ font-family:'Fraunces',Georgia,serif; font-weight:500; letter-spacing:-.03em; line-height:1.12; }
+.serif{ font-family:'Fraunces',Georgia,serif; }
+.mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+.eyebrow{
+  display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:500;
+  letter-spacing:.15em; text-transform:uppercase; color:var(--accent-ink);
+  background:var(--accent-soft); border-radius:999px; padding:5px 11px;
+}
+
+/* ---------- Top bar: compact, gets a hairline once you scroll ---------- */
+.topbar{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  padding:calc(var(--top) + 10px) var(--edge) 10px;
+  background:var(--bg);
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4);
+  display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid transparent; transition:border-color .25s ease;
+}
+.topbar.stuck{ border-bottom-color:var(--line); }
+.tb-brand{ display:flex; align-items:center; gap:9px; min-width:0; flex:1; min-height:44px; text-decoration:none; color:inherit; }
+.tb-mark{
+  width:30px; height:30px; border-radius:9px; background:var(--accent); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--sh-accent);
+}
+.tb-title{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:16px; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* Right-aligned, two tight lines, so it costs no extra top-bar height. The title gets
+   min-width:0 + ellipsis so a long one ("Find a dish") shortens rather than shoving
+   the clock off the edge. */
+.tb-clock{
+  flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end;
+  line-height:1.2; font-family:'JetBrains Mono',monospace; color:var(--clock-ink);
+}
+.tb-time{ font-size:12.5px; font-weight:700; letter-spacing:.01em; }
+.tb-date{ font-size:10.5px; font-weight:500; opacity:.82; letter-spacing:.02em; }
+.tb-btn{
+  flex-shrink:0; width:44px; height:44px; min-height:44px; border-radius:999px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:15px;
+  background:var(--surface); border:1px solid var(--line); color:var(--muted);
+  transition:transform .16s ease;
+}
+.tb-btn:active{ transform:scale(.9); }
+
+/* ---------- Views ---------- */
+main{ padding-top:calc(var(--top) + 60px); padding-bottom:calc(var(--tabh) + var(--bot) + 24px); }
+.view{ display:none; animation:viewIn .3s cubic-bezier(.22,.9,.3,1); }
+.view.on{ display:block; }
+@keyframes viewIn{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+/* Replaces .view-head. One line, not a masthead: on a phone the top bar is the title,
+   and repeating it in 2.4rem serif pushed the first meal card to y=371 of 844. */
+.viewline{ color:var(--muted); font-size:13.5px; padding:12px 0 14px; }
+
+/* ---------- Bottom tab bar ---------- */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:60;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  padding:6px var(--edge) calc(var(--bot) + 6px);
+  background:var(--surface);
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(20px) saturate(1.5); -webkit-backdrop-filter:blur(20px) saturate(1.5);
+  border-top:1px solid var(--line);
+}
+.tab{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  padding:7px 4px; border:none; background:none; cursor:pointer; border-radius:var(--r-md);
+  color:var(--faint); font-family:'Work Sans',sans-serif; font-size:10.5px; font-weight:600;
+  transition:color .2s ease; position:relative; min-height:50px;
+}
+.tab svg{ width:22px; height:22px; stroke-width:1.9; }
+.tab.on{ color:var(--accent-ink); }
+.tab.on .tab-ico{ background:var(--accent-soft); }
+.tab-ico{ display:flex; align-items:center; justify-content:center; width:44px; height:26px; border-radius:999px; transition:background .22s ease; }
+.tab .badge{
+  position:absolute; top:4px; right:calc(50% - 20px);
+  min-width:16px; height:16px; padding:0 4px; border-radius:999px;
+  background:var(--red); color:#fff; font-size:9.5px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace;
+}
+/* display:flex beats the UA's [hidden]{display:none}, so restate it explicitly. */
+.tab .badge[hidden]{ display:none; }
+
+/* ---------- Now card (Today hero) ---------- */
+.now{
+  position:relative; overflow:hidden;
+  background:linear-gradient(145deg,#f0bb5c 0%,#e09a2b 100%);
+  border-radius:var(--r-xl); padding:24px; color:#1b1f14; box-shadow:var(--sh-accent);
+}
+.now::after{
+  content:''; position:absolute; top:-40%; right:-20%;
+  width:280px; height:280px; border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.28) 0%,transparent 65%);
+  pointer-events:none;
+}
+.now-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; position:relative; z-index:1; }
+.now-label{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; opacity:.72; }
+.now-meal{ font-family:'Fraunces',Georgia,serif; font-size:2rem; font-weight:500; letter-spacing:-.03em; margin-top:4px; }
+.now-time{
+  flex-shrink:0; display:inline-flex; align-items:center; gap:7px;
+  background:rgba(27,31,20,.16); border-radius:999px; padding:7px 13px;
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.04em;
+}
+.now-time .dot{ width:7px; height:7px; border-radius:50%; background:#1b1f14; }
+.now-time.live .dot{ animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+.now-items{ position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:7px; margin-top:20px; }
+/* Rendered as <span>, <a> or <button> depending on whether it does anything, so the
+   font and colour have to be stated rather than inherited — a bare <button> would
+   otherwise come out in the browser's default 13.33px Arial. */
+.now-chip{
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(27,31,20,.12); border:1px solid rgba(27,31,20,.18);
+  border-radius:999px; padding:7px 12px; font-size:13px; font-weight:500;
+  font-family:'Work Sans',sans-serif; color:inherit; text-decoration:none;
+  min-height:34px; cursor:default;
+}
+/* Only the ones that actually go somewhere look and behave like they do. */
+/* Same rule on the Now card: the ones that go somewhere get a 44px target. */
+a.now-chip, button.now-chip{ cursor:pointer; min-height:44px; padding-top:0; padding-bottom:0; }
+a.now-chip:active, button.now-chip:active{ transform:scale(.97); }
+button.now-chip.more{ font-weight:600; }
+a.now-chip:focus-visible, button.now-chip:focus-visible{ outline:2px solid #1b1f14; outline-offset:2px; }
+
+/* Paid items on the Now card.
+   A dashed outline was the wrong tool: the card is a bright amber gradient, so a
+   low-opacity dark border has almost nothing to contrast against and reads as a
+   rendering artefact rather than a signal. Inverting the chip instead — dark fill,
+   amber text, the same pairing as the card's primary button — makes it the most
+   visible thing in the row, which is right: it's the only chip that costs money and
+   the only one that goes anywhere. */
+a.now-chip.paid{
+  background:#1b1f14;
+  border-color:#1b1f14;
+  color:#f7e3bc;
+  font-weight:600;
+  box-shadow:0 2px 8px rgba(27,31,20,.28);
+}
+a.now-chip.paid .price{
+  background:#f0bb5c; color:#1b1f14; font-weight:700;
+}
+/* The veg/non-veg mark was darkened for the amber card; on the inverted chip it has to
+   go back to bright, or it vanishes into the dark fill. */
+a.now-chip.paid .vnv.veg{ border-color:#5fbf6e; }
+a.now-chip.paid .vnv.veg::after{ background:#5fbf6e; }
+a.now-chip.paid .vnv.nonveg{ border-color:#e8735a; }
+a.now-chip.paid .vnv.nonveg::after{ background:#e8735a; }
+a.now-chip.paid:focus-visible{ outline:2px solid #1b1f14; outline-offset:3px; }
+
+/* Specials on the Now card. Same berry as the Week card so "pink = treat" holds
+   wherever you see it; it isn't a link, because a special isn't something you book. */
+.now-chip.special{
+  background:var(--special-fill); border-color:var(--special-fill); color:var(--special-ink);
+  font-weight:700; box-shadow:0 2px 10px var(--special-glow);
+}
+.now-chip.special .vnv.veg{ border-color:#eafaf0; } .now-chip.special .vnv.veg::after{ background:#eafaf0; }
+.now-chip.special .vnv.nonveg{ border-color:#ffd9d2; } .now-chip.special .vnv.nonveg::after{ background:#ffd9d2; }
+.now-chip .price{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; background:rgba(27,31,20,.16); padding:2px 6px; border-radius:999px; }
+/* The standard green/red marks disappear against the green card — lighten them here. */
+.now-chip .vnv.veg{ border-color:#1d5c26; } .now-chip .vnv.veg::after{ background:#1d5c26; }
+.now-chip .vnv.nonveg{ border-color:#8c2d1c; } .now-chip .vnv.nonveg::after{ background:#8c2d1c; }
+.now-actions{ position:relative; z-index:1; display:flex; gap:9px; margin-top:22px; }
+.now-btn{
+  flex:1; padding:13px; border-radius:999px; border:none; cursor:pointer;
+  font-family:'Work Sans',sans-serif; font-size:14px; font-weight:700;
+  background:#1b1f14; color:#f0bb5c; transition:transform .16s ease;
+}
+.now-btn.ghost{ background:rgba(27,31,20,.14); color:#1b1f14; border:1px solid rgba(27,31,20,.22); }
+.now-btn:active{ transform:scale(.97); }
+.now-btn:disabled{ opacity:.55; cursor:default; }
+
+/* ---------- Generic card ---------- */
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:20px; box-shadow:var(--sh-sm); }
+.stack{ display:flex; flex-direction:column; gap:14px; }
+.row-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:26px 0 12px; }
+.row-head h2{ font-size:1.25rem; }
+/* This was 59x15px — the only target in the app under 44px, and it sits right where a
+   thumb reaches. Negative margins keep it visually flush with the heading while the
+   padding gives it a real touch area. */
+.row-head a,.row-head button{
+  background:none; border:none; color:var(--accent-ink); font-size:13px; font-weight:600;
+  font-family:'Work Sans',sans-serif; cursor:pointer;
+  display:inline-flex; align-items:center; min-height:44px; padding:0 10px;
+  margin:-12px -10px -12px 0; border-radius:12px;
+}
+.row-head button:active{ background:var(--accent-tint); }
+
+/* ---------- Search suggestions / history ---------- */
+.sugg{ margin-bottom:20px; }
+.sugg-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--faint);
+}
+.sugg-clear{
+  background:none; border:none; cursor:pointer; color:var(--accent-ink);
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; font-weight:700;
+  display:inline-flex; align-items:center; min-height:44px; padding:0 8px; margin:-12px -8px -12px 0;
+  border-radius:10px;
+}
+.sugg-clear:active{ background:var(--accent-tint); }
+.sugg-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.sugg-chip{
+  display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0 14px;
+  border-radius:999px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); color:var(--ink-2);
+  font-family:'Work Sans',sans-serif; font-size:13.5px; font-weight:500;
+  transition:border-color .16s ease,background .16s ease;
+}
+.sugg-chip:active{ background:var(--accent-tint); border-color:var(--accent); }
+.sugg-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+/* Paid suggestions carry the same fill as a paid chip on a meal card, so the connection
+   is obvious before you tap. */
+.sugg-chip.paid{
+  background:var(--paid-fill); border-color:var(--paid-fill); color:var(--paid-ink); font-weight:600;
+}
+.sugg-chip.paid:active{ background:var(--paid-fill); }
+.sc-price{
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  background:var(--paid-ink); color:var(--paid-fill); padding:2px 6px; border-radius:999px;
+}
+
+/* ---------- Grouped search results ---------- */
+.dish{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
+  padding:14px 15px; margin-bottom:11px;
+}
+.dish-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.dish-name{ font-size:1rem; font-weight:600; line-height:1.35; }
+.dish-name .price{
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  color:var(--accent-deep); background:var(--accent-soft); padding:2px 7px; border-radius:999px;
+  vertical-align:middle; margin-left:3px;
+}
+.dish-meta{ font-size:12px; color:var(--faint); margin-top:4px; }
+.dish-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
+.hitchip{
+  display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 12px;
+  background:var(--bg-2); border:1px solid var(--line-soft); border-radius:999px;
+  font-family:'Work Sans',sans-serif; color:var(--ink-2); cursor:pointer;
+  transition:border-color .16s ease, background .16s ease;
+}
+.hitchip:active{ background:var(--accent-tint); border-color:var(--accent); }
+.hitchip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.hc-day{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--accent-ink); letter-spacing:.06em; }
+.hc-meal{ font-size:12.5px; }
+.hc-mess{
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 4px;
+}
+
+/* ---------- Compact meal rows (rest of today) ---------- */
+/* This list was three near-black rectangles on a near-black page — --surface (#1c2116)
+   on --bg (#12150f) is about a 1.1:1 step, so the rows had no edges and the whole
+   section read as a smear. Now: a warm gradient, an accent-tinted border, and a bright
+   rail down the left edge that gives each row a definite start. */
+.mini{
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; gap:13px; width:100%; text-align:left;
+  background:var(--mini-bg); border:1px solid var(--mini-line); border-radius:var(--r-md);
+  padding:14px 16px 14px 19px; cursor:pointer;
+  transition:border-color .18s ease,transform .16s ease;
+  font-family:'Work Sans',sans-serif; box-shadow:var(--sh-sm);
+}
+.mini::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--mini-rail);
+}
+.mini:active{ transform:scale(.99); border-color:var(--accent); }
+/* A meal that's been and gone steps back, but not so far it can't be read. */
+.mini.done{ opacity:.55; }
+.mini.done::before{ background:var(--line); }
+.mini-when{
+  flex-shrink:0; width:58px; font-family:'JetBrains Mono',monospace;
+  font-size:10.5px; font-weight:700; color:var(--accent-ink); letter-spacing:.02em;
+  background:var(--accent-soft); border-radius:7px; padding:5px 0; text-align:center;
+}
+.mini.done .mini-when{ background:none; color:var(--faint); }
+.mini-body{ flex:1; min-width:0; }
+.mini-name{ font-family:'Fraunces',Georgia,serif; font-size:1.05rem; font-weight:500; color:var(--ink); }
+.mini-items{ font-size:12.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; }
+.mini-arrow{ flex-shrink:0; color:var(--faint); font-size:18px; }
+
+/* ---------- Segmented control ---------- */
+.seg{
+  position:relative; display:flex; padding:4px; border-radius:999px;
+  background:var(--bg-2); border:1px solid var(--line-soft); width:100%;
+}
+.seg-thumb{
+  position:absolute; top:4px; bottom:4px; left:4px; border-radius:999px;
+  background:var(--surface); box-shadow:var(--sh-sm); border:1px solid var(--line);
+  transition:transform .4s cubic-bezier(.34,1.25,.4,1),width .4s cubic-bezier(.34,1.25,.4,1); z-index:0;
+}
+.seg button{
+  position:relative; z-index:1; flex:1; min-width:0; padding:11px 8px; min-height:44px;
+  border:none; background:none; cursor:pointer; border-radius:999px;
+  font-family:'Work Sans',sans-serif; font-size:13.5px; font-weight:600;
+  color:var(--muted); transition:color .26s ease; white-space:nowrap;
+}
+.seg button.on{ color:var(--accent-deep); }
+.today-seg{ margin:0 0 16px; }
+
+/* ---------- Sticky filter bar in Week view ---------- */
+.stickybar{
+  position:sticky; top:calc(var(--top) + 56px); z-index:30;
+  background:var(--bg);
+  background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  padding:10px 0 8px; margin-inline:calc(var(--edge) * -1); padding-inline:var(--edge);
+}
+.day-rail{
+  display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+  padding:10px 0 4px; scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+}
+.day-rail::-webkit-scrollbar{ display:none; }
+.day{
+  flex:0 0 auto; min-width:56px; min-height:56px; padding:9px 6px; cursor:pointer;
+  border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  transition:background .2s ease,border-color .2s ease,transform .16s ease;
+  scroll-snap-align:center; font-family:'Work Sans',sans-serif;
+}
+.day .dn{ font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:.06em; color:var(--muted); }
+.day .dd{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--faint); }
+.day:active{ transform:scale(.95); }
+.day.today .dd{ color:var(--accent-ink); font-weight:700; }
+.day.sel{ background:var(--accent); border-color:var(--accent); box-shadow:var(--sh-accent); }
+.day.sel .dn,.day.sel .dd{ color:var(--on-accent); }
+
+.filters{ display:flex; gap:8px; margin-top:10px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.filters::-webkit-scrollbar{ display:none; }
+.fchip{
+  flex-shrink:0; display:inline-flex; align-items:center; gap:7px; min-height:44px;
+  padding:8px 14px; border-radius:999px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); color:var(--muted);
+  font-family:'Work Sans',sans-serif; font-size:13px; font-weight:600;
+  transition:all .18s ease;
+}
+.fchip.on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-deep); }
+/* Stands out while it has somewhere to take you; recedes once you're already there. */
+.today-chip{ background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent-ink); }
+.today-chip.here{ background:var(--surface); border-color:var(--line); color:var(--faint); }
+.fchip:active{ transform:scale(.96); }
+
+/* ---------- Search ---------- */
+.search{ position:relative; margin-bottom:6px; }
+.search input{
+  width:100%; padding:13px 15px 13px 42px; border-radius:999px;
+  background:var(--surface); border:1px solid var(--line); color:var(--ink);
+  font-family:'Work Sans',sans-serif; font-size:16px; /* 16px stops iOS zooming on focus */
+  outline:none; transition:border-color .2s ease,box-shadow .2s ease;
+}
+.search input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.search .si{ position:absolute; left:15px; top:50%; transform:translateY(-50%); color:var(--faint); pointer-events:none; }
+.search .sx{
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; min-height:34px; border-radius:999px; border:none; background:none;
+  color:var(--faint); cursor:pointer; font-size:16px; display:none;
+}
+.search.has .sx{ display:block; }
+.hit{ background:var(--accent-soft); border-radius:4px; padding:0 2px; }
+
+/* ---------- Meal cards ---------- */
+.meals{ display:grid; gap:14px; grid-template-columns:1fr; }
+@media (min-width:700px){ .meals{ grid-template-columns:1fr 1fr; } }
+.meal{
+  display:flex; flex-direction:column;
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r-lg); padding:20px; box-shadow:var(--sh-sm);
+  animation:rise .4s cubic-bezier(.22,.9,.3,1) both;
+}
+@keyframes rise{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+.meal-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.meal-name{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:1.4rem; letter-spacing:-.025em; line-height:1.15; color:var(--ink); }
+.meal-time{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--faint); margin-top:4px; }
+.avg{
+  flex-shrink:0; display:inline-flex; align-items:center; gap:4px;
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700;
+  color:var(--accent-deep); background:var(--accent-soft); border-radius:999px; padding:5px 10px;
+}
+.best{
+  display:inline-flex; margin-left:7px; vertical-align:middle;
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  letter-spacing:.09em; text-transform:uppercase; color:#16200c; background:var(--second);
+  border-radius:999px; padding:3px 8px;
+}
+.items{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.chip{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:13px; padding:7px 11px; border-radius:999px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2);
+}
+/* Specials and paid items are the two chips that matter — a dessert that only shows up
+   once a week, and anything that costs money and links out to booking. They were tinted
+   with var(--accent-soft) and, worse, bordered in rgba(18,135,94,…) — the GREEN from the
+   palette before turmeric, never updated. A 14%-opacity tint is invisible on a dark card
+   and nearly invisible on a light one, so neither chip was actually highlighted.
+   Both now use solid fills with fixed ink, so they look identical in dark and light
+   instead of depending on a token that moves underneath them. Two different colours,
+   because they mean two different things and often sit in the same row. */
+.chip.special{
+  background:var(--special-fill); border-color:var(--special-fill); color:var(--special-ink);
+  font-weight:700; box-shadow:0 2px 10px var(--special-glow);
+}
+.chip.paid{
+  background:var(--paid-fill); border-color:var(--paid-fill); color:var(--paid-ink);
+  font-weight:600; text-decoration:none; box-shadow:0 2px 10px var(--paid-glow);
+}
+/* A paid chip is a LINK to the booking page, so it needs a real touch target — the plain
+   chips beside it are text and stay compact, which keeps the cards from ballooning. */
+a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
+.chip.paid:active{ transform:scale(.97); }
+.chip .price{ font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--accent-deep); background:var(--accent-soft); padding:2px 6px; border-radius:999px; }
+/* On a filled amber chip the price pill has to invert, or it's amber on amber. */
+.chip.paid .price{ background:var(--paid-ink); color:var(--paid-fill); }
+/* Both fills are strong colours; the veg/non-veg mark needs its own high-contrast
+   treatment on each or it disappears exactly where it's most worth reading. */
+.chip.special .vnv.veg{ border-color:#eafaf0; } .chip.special .vnv.veg::after{ background:#eafaf0; }
+.chip.special .vnv.nonveg{ border-color:#ffd9d2; } .chip.special .vnv.nonveg::after{ background:#ffd9d2; }
+.chip.paid .vnv.veg{ border-color:#14521f; } .chip.paid .vnv.veg::after{ background:#14521f; }
+.chip.paid .vnv.nonveg{ border-color:#7d2314; } .chip.paid .vnv.nonveg::after{ background:#7d2314; }
+.chip.dim{ opacity:.32; }
+.vnv{ width:10px; height:10px; border:1.5px solid; border-radius:2px; position:relative; flex:0 0 auto; }
+.vnv::after{ content:''; position:absolute; inset:2px; border-radius:50%; }
+.vnv.veg{ border-color:#2f9e4f; } .vnv.veg::after{ background:#2f9e4f; }
+.vnv.nonveg{ border-color:var(--red); } .vnv.nonveg::after{ background:var(--red); }
+
+.note{ font-size:12px; line-height:1.5; color:var(--faint); border-top:1px solid var(--line-soft); padding-top:11px; }
+.says{ border-top:1px solid var(--line-soft); margin-top:11px; padding-top:11px; display:flex; flex-direction:column; gap:7px; }
+.says .sh{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); }
+.says .sl{ font-size:12.5px; color:var(--muted); line-height:1.5; }
+.says .sl .st{ color:var(--accent-ink); font-family:'JetBrains Mono',monospace; font-size:10px; }
+.says .sn{ font-size:11px; color:var(--faint); line-height:1.45; margin-top:2px; }
+/* "you" beside the score, so the badge can't be mistaken for a community average. */
+.avg-who{ font-size:10px; letter-spacing:.1em; text-transform:uppercase; opacity:.8; font-weight:500; }
+.rate-btn{
+  margin-top:13px; width:100%; padding:12px; border-radius:999px; cursor:pointer;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2);
+  font-family:'Work Sans',sans-serif; font-size:13.5px; font-weight:600; transition:all .18s ease;
+}
+.rate-btn:active:not(:disabled){ transform:scale(.98); }
+.rate-btn.locked{ opacity:.5; cursor:not-allowed; border-style:dashed; }
+.rate-btn.rated{ cursor:default; border-color:var(--accent-line); color:var(--accent-deep); background:var(--accent-tint); }
+
+/* ---------- You view ---------- */
+.stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px; }
+.stat{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:16px 12px; text-align:center; box-shadow:var(--sh-sm); }
+.stat .n{ font-family:'Fraunces',Georgia,serif; font-size:1.7rem; font-weight:500; color:var(--accent-ink); line-height:1; }
+.stat .l{ font-size:11px; color:var(--muted); margin-top:6px; line-height:1.35; }
+
+.mysub-item{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:15px 16px; margin-bottom:10px; font-size:13.5px; box-shadow:var(--sh-sm); }
+.mysub-top{ display:flex; justify-content:space-between; gap:10px; font-weight:600; }
+.mysub-when{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--faint); font-weight:400; white-space:nowrap; }
+.mysub-comment{ color:var(--muted); margin-top:7px; font-weight:400; line-height:1.5; }
+.mysub-foot{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.status-chip{
+  display:inline-flex; align-items:center; margin-top:10px;
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; border-radius:999px; padding:5px 10px; border:1px solid;
+}
+.status-chip.submitted{ color:var(--muted); border-color:var(--line); background:var(--surface-2); }
+.status-chip.reviewing{ color:var(--accent-deep); border-color:var(--accent-line); background:var(--accent-soft); }
+.status-chip.resolved{ color:#16200c; border-color:var(--second); background:var(--second); }
+.status-note{ font-size:12.5px; color:var(--muted); margin-top:8px; font-style:italic; line-height:1.5; }
+.mysub-ref{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--faint); margin-top:10px; letter-spacing:.05em; }
+.empty{ text-align:center; padding:44px 20px; }
+.empty-ico{ width:58px; height:58px; border-radius:18px; background:var(--accent-soft); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.empty h3{ font-size:1.15rem; margin-bottom:7px; }
+.empty p{ font-size:13.5px; color:var(--muted); max-width:34ch; margin:0 auto; line-height:1.55; }
+.empty-note{ color:var(--faint); font-size:13.5px; text-align:center; padding:30px 0; }
+
+/* ---------- More view ---------- */
+.list{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--sh-sm); }
+.list-item{
+  display:flex; align-items:center; gap:14px; width:100%; padding:16px 18px;
+  background:none; border:none; border-bottom:1px solid var(--line-soft); cursor:pointer;
+  text-align:left; font-family:'Work Sans',sans-serif; color:inherit; text-decoration:none;
+}
+.list-item:last-child{ border-bottom:none; }
+.list-item:active{ background:var(--surface-2); }
+.li-ico{ width:38px; height:38px; flex-shrink:0; border-radius:11px; background:var(--accent-soft); color:var(--accent-deep); display:flex; align-items:center; justify-content:center; }
+.li-body{ flex:1; min-width:0; }
+.li-body b{ display:block; font-size:14.5px; font-weight:600; }
+.li-body span{ font-size:12.5px; color:var(--muted); line-height:1.4; display:block; margin-top:1px; }
+.li-arrow{ color:var(--faint); flex-shrink:0; font-size:17px; }
+
+.steps{ display:flex; flex-direction:column; gap:12px; }
+.step{ display:flex; gap:14px; }
+.step-n{
+  flex-shrink:0; width:30px; height:30px; border-radius:999px; background:var(--accent); color:var(--on-accent);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700;
+}
+.step-b b{ display:block; font-size:14.5px; font-weight:600; margin-bottom:3px; }
+.step-b p{ font-size:13.5px; color:var(--muted); line-height:1.55; }
+
+.install{
+  display:none; align-items:center; gap:13px; padding:15px 17px; margin-bottom:16px;
+  background:var(--accent-soft); border:1px solid var(--accent-line); border-radius:var(--r-lg);
+}
+.install.show{ display:flex; }
+.install-b{ flex:1; min-width:0; }
+.install-b b{ display:block; font-size:14px; font-weight:600; }
+.install-b span{ font-size:12.5px; color:var(--muted); }
+.install button{
+  flex-shrink:0; padding:10px 16px; border-radius:999px; border:none; cursor:pointer;
+  background:var(--accent); color:var(--on-accent); font-family:'Work Sans',sans-serif; font-size:13px; font-weight:700;
+}
+
+/* ---------- Sheets ---------- */
+/* backdrop-filter belongs on .show, NOT here.
+   There are five of these — one per sheet — and each is position:fixed inset:0. With the
+   blur on the base rule, all five were full-screen backdrop-filter layers alive at all
+   times, even with every sheet closed. opacity:0 does not take a layer out of the
+   compositor: the browser still re-blurs the whole viewport behind each one on every
+   scrolled frame. Five of them, on a phone GPU, on every scroll. Moving the filter to
+   .show (plus visibility:hidden at rest) means the cost exists only while a sheet is
+   actually open — which is the only time anything is behind it to blur. */
+.backdrop{ position:fixed; inset:0; background:rgba(19,36,29,.44);
+  opacity:0; pointer-events:none; visibility:hidden;
+  transition:opacity .25s ease, visibility 0s linear .25s; z-index:70; }
+.backdrop.show{
+  opacity:1; pointer-events:auto; visibility:visible;
+  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+  transition:opacity .25s ease, visibility 0s;
+}
+.sheet{
+  position:fixed; left:50%; bottom:0; transform:translate(-50%,100%);
+  width:100%; max-width:560px; max-height:90svh;
+  background:var(--surface); border:1px solid var(--line); border-bottom:none;
+  border-radius:var(--r-xl) var(--r-xl) 0 0; box-shadow:0 -18px 54px rgba(19,36,29,.2);
+  z-index:80;
+  /* A closed sheet used to be merely translated off-screen, so every control inside all
+     five of them — selects, stars, textareas, submit buttons — stayed in the tab order
+     and in the accessibility tree. Same fault as the old lock screen, five times over.
+     `visibility:hidden` removes them; the 0s transition DELAYED by the slide duration is
+     what keeps the sheet visible while it slides out instead of vanishing on click. */
+  visibility:hidden;
+  transition:transform .34s cubic-bezier(.32,.72,0,1), visibility 0s linear .34s;
+  padding:12px 20px calc(var(--bot) + 22px); overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+.sheet.show{
+  transform:translate(-50%,0); visibility:visible;
+  transition:transform .34s cubic-bezier(.32,.72,0,1), visibility 0s;
+}
+.grab{ width:40px; height:4px; border-radius:3px; background:var(--line); margin:0 auto 14px; }
+.sheet-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.sheet-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:1.4rem; letter-spacing:-.025em; }
+.sheet-sub{ font-size:12.5px; color:var(--muted); margin:4px 0 18px; line-height:1.5; }
+.x{ background:none; border:none; color:var(--faint); font-size:20px; cursor:pointer; width:44px; height:44px; min-height:44px; }
+/* One column, not two.
+   Two columns on a phone gave each field roughly 170px, which is not enough for
+   "Evening Snacks" or for an iOS date field showing "18 Sep 2026" — and because a grid
+   item defaults to min-width:auto, an item too wide for its track does NOT shrink, it
+   overflows and lands on top of its neighbour. That is the overlap: on iOS the date
+   input's intrinsic minimum is far wider than Chromium's, so it pushed into the Meal
+   field beside it. Chromium showed the same cause more gently, splitting a 320px row
+   into 149px + 119px instead of two equal halves.
+   Two fixes, because one alone is not enough:
+     1. min-width:0 on every item, so a control that will not fit shrinks instead of
+        spilling over its neighbour. This is the root cause and it applies to every row.
+     2. The two controls with unpredictable intrinsic widths - the date input and the
+        Meal select, whose longest option is "Evening Snacks" - get a full-width row of
+        their own. Mess Hall and Menu are short, fixed-vocabulary selects, so they stay
+        paired and the sheet stays ~80px shorter than an all-single-column layout, which
+        is what keeps the stars on screen on a 375x667 phone. */
+.fields{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.fields > *{ min-width:0; }
+.field.full{ grid-column:1 / -1; }
+.field label{ display:block; font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:6px; }
+/* input[type="text"] was missing from this list, which is why the name and roll-number
+   fields rendered as raw browser inputs — narrow, hairline-bordered, nothing like the
+   rest of the app. Every text-ish control belongs here so the next one added inherits
+   the look instead of needing its own rule. */
+select,input[type="text"],input[type="date"],textarea{
+  width:100%; max-width:100%; min-width:0; background:var(--surface-2); color:var(--ink);
+  border:1px solid var(--line); border-radius:var(--r-md); padding:13px;
+  font-family:'Work Sans',sans-serif; font-size:16px; outline:none;  /* 16px: no iOS zoom */
+  transition:border-color .2s ease,box-shadow .2s ease; min-height:48px;
+}
+/* iOS gives date inputs a native intrinsic width that ignores the box you put them in,
+   which is what let this one grow past its column. Turning the native appearance off
+   makes width:100% actually hold; the date picker itself is unaffected. */
+input[type="date"]{
+  -webkit-appearance:none; appearance:none;
+  display:block; text-align:left;
+}
+/* A long option must clip, never widen the control that holds it. */
+select{ text-overflow:ellipsis; }
+select:focus,input[type="text"]:focus,input[type="date"]:focus,textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+select::placeholder,input::placeholder,textarea::placeholder{ color:var(--faint); }
+select{ appearance:none; cursor:pointer; }
+input[type="date"]{ color-scheme:var(--scheme); }
+textarea{ min-height:92px; resize:none; line-height:1.55; margin-bottom:14px; }
+textarea::placeholder{ color:var(--faint); }
+.lock-note{ font-size:11.5px; color:var(--faint); margin:-2px 0 14px; min-height:14px; line-height:1.5; }
+/* ---------- Settings row + three-way segmented control ---------- */
+.setting{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:16px; margin-bottom:16px; box-shadow:var(--sh-sm);
+}
+.setting-label{ margin-bottom:12px; }
+.setting-label b{ display:block; font-size:14.5px; font-weight:600; margin-bottom:3px; }
+.setting-label span{ font-size:12.5px; color:var(--muted); line-height:1.5; }
+.seg3{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:5px;
+  background:var(--bg-2); border:1px solid var(--line-soft); border-radius:12px; padding:4px;
+}
+.seg3-btn{
+  min-height:44px; border:none; border-radius:9px; cursor:pointer; background:none;
+  font-family:'Work Sans',sans-serif; font-size:13.5px; font-weight:600; color:var(--muted);
+  transition:background .16s ease, color .16s ease;
+}
+.seg3-btn.on{ background:var(--accent); color:var(--on-accent); box-shadow:var(--sh-sm); }
+.seg3-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* ---------- Swipe hint under the day rail ---------- */
+.swipe-hint{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:9px; font-size:11.5px; color:var(--faint);
+  animation:hint-fade .5s ease both;
+}
+.swipe-hint svg{ opacity:.7; }
+@keyframes hint-fade{ from{opacity:0; transform:translateY(-3px);} to{opacity:1; transform:none;} }
+
+/* ---------- What you're rating (collapsed context) ---------- */
+.ctx{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  width:100%; text-align:left; cursor:pointer; min-height:58px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-md);
+  padding:11px 14px; margin-bottom:6px;
+  font-family:'Work Sans',sans-serif; color:var(--ink);
+  transition:border-color .16s ease, background .16s ease;
+}
+.ctx:active{ background:var(--accent-tint); border-color:var(--accent); }
+.ctx:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.ctx-body{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.ctx-main{ font-size:15px; font-weight:600; }
+.ctx-sub{ font-size:12px; color:var(--muted); }
+.ctx-cta{
+  flex-shrink:0; color:var(--accent-ink); font-size:12px; font-weight:700;
+  display:inline-flex; align-items:center; gap:3px;
+}
+.ctx-cta::after{ content:'⌄'; font-size:14px; line-height:1; transition:transform .22s ease; }
+.ctx.open .ctx-cta::after{ transform:rotate(180deg); }
+
+/* Bigger than before, because they are now the first thing you reach for rather than
+   something below four dropdowns. */
+.stars{ display:flex; gap:4px; margin:14px 0 2px; }
+.star-hint{
+  text-align:center; font-size:11.5px; color:var(--faint); min-height:16px;
+  margin-bottom:14px; transition:color .2s ease;
+}
+.star-hint.set{ color:var(--accent-ink); font-weight:600; }
+.star{
+  flex:1; font-size:40px; line-height:1; cursor:pointer; color:var(--line);
+  background:none; border:none; padding:6px 0; min-height:52px;
+  transition:color .14s ease,transform .14s ease;
+}
+.star:active{ transform:scale(1.15); }
+.star.on{ color:var(--second); }
+/* Focus has to be visible now that the control is reachable by keyboard. */
+.star:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:10px; }
+.submit{
+  width:100%; padding:16px; border-radius:999px; border:none; cursor:pointer;
+  background:var(--accent); color:var(--on-accent); box-shadow:var(--sh-accent);
+  font-family:'Work Sans',sans-serif; font-size:15px; font-weight:700; min-height:52px;
+  transition:transform .16s ease;
+}
+.submit:active{ transform:scale(.99); }
+.submit.danger{ background:var(--red); color:#fff8ef; box-shadow:0 6px 18px rgba(209,80,58,.3); }
+.shared-note{ font-size:11.5px; color:var(--faint); text-align:center; margin-top:11px; }
+.photo-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.photo-btn{ background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--r-md);
+  padding:13px 16px; font-size:13px; color:var(--muted); cursor:pointer; font-family:'Work Sans',sans-serif; min-height:48px; display:flex; align-items:center; }
+.photo-preview{ width:52px; height:52px; border-radius:var(--r-md); object-fit:cover; border:1px solid var(--line); display:none; }
+.photo-remove{ background:none; border:none; color:var(--red); font-size:12px; cursor:pointer; display:none; font-family:'Work Sans',sans-serif; }
+.sheet-loading{
+  position:absolute; inset:0; border-radius:var(--r-xl) var(--r-xl) 0 0; background:var(--surface);
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:15px; z-index:5;
+}
+.sheet-loading.show{ display:flex; }
+@keyframes spin{ to{transform:rotate(360deg);} }
+.loading-text{ font-size:14.5px; font-weight:600; color:var(--ink); }
+.loading-sub{ font-size:12px; color:var(--faint); max-width:250px; text-align:center; line-height:1.5; min-height:18px; }
+
+/* A pan on the heat, tossing three dishes, with steam coming off it.
+   Worth the CSS: Render's free tier sleeps, so the first submission after a quiet spell
+   takes 30-60 seconds. A bare spinner for a minute reads as "this has frozen"; something
+   that is visibly still going reads as "this is working". */
+.cooking{ position:relative; width:120px; height:86px; }
+.pan{ position:absolute; left:50%; bottom:6px; transform:translateX(-50%); animation:pan-toss 1.5s ease-in-out infinite; }
+.pan-body{
+  width:66px; height:19px; border-radius:0 0 34px 34px;
+  background:linear-gradient(180deg,var(--accent) 0%,var(--accent-deep) 100%);
+  box-shadow:0 3px 10px var(--paid-glow);
+}
+.pan-handle{
+  position:absolute; right:-31px; top:2px; width:34px; height:5px; border-radius:3px;
+  background:var(--accent-ink); opacity:.65;
+}
+.bit{ position:absolute; left:50%; bottom:22px; font-size:17px; animation:bit-hop 1.5s ease-in-out infinite; }
+.b1{ margin-left:-21px; animation-delay:0s; }
+.b2{ margin-left:-8px;  animation-delay:.16s; }
+.b3{ margin-left:5px;   animation-delay:.32s; }
+.steam{ position:absolute; left:50%; bottom:40px; transform:translateX(-50%); display:flex; gap:9px; }
+.steam i{
+  width:4px; height:16px; border-radius:2px; background:var(--muted);
+  opacity:0; animation:steam-rise 2.1s ease-out infinite;
+}
+.steam i:nth-child(2){ animation-delay:.6s; }
+.steam i:nth-child(3){ animation-delay:1.2s; }
+@keyframes pan-toss{
+  0%,100%{ transform:translateX(-50%) rotate(0deg); }
+  38%    { transform:translateX(-50%) rotate(-19deg); }
+  55%    { transform:translateX(-50%) rotate(7deg); }
+}
+@keyframes bit-hop{
+  0%,100%{ transform:translateY(0) rotate(0deg); }
+  40%    { transform:translateY(-26px) rotate(-150deg); }
+  70%    { transform:translateY(-7px) rotate(-250deg); }
+}
+@keyframes steam-rise{
+  0%  { opacity:0; transform:translateY(6px) scaleY(.5); }
+  28% { opacity:.5; }
+  100%{ opacity:0; transform:translateY(-26px) scaleY(1.25); }
+}
+/* Anyone who has asked the OS to stop moving things gets a still pan. */
+@media (prefers-reduced-motion:reduce){
+  .pan,.bit,.steam i{ animation:none; }
+  .steam i{ opacity:.35; }
+}
+
+/* ---------- Who's rating (identity sheet) ----------
+   Centred and deliberately sparse: this is the one screen standing between a student
+   and the thing they opened the app to do, so it should read as a single short step,
+   not as a form. Two fields, one button, one line of reassurance. */
+/* Above the other sheets, because it is opened FROM one of them.
+   Every .sheet was z-index:80, and #idSheet appears before #sheet in the markup, so
+   tapping "Change" inside the rating sheet slid the editor up *behind* it — the button
+   worked, the screen was simply invisible. Raising it (and its backdrop above the sheet
+   layer) also means the rating sheet stays open underneath, so a comment already typed
+   and stars already tapped survive the detour. */
+#idSheet{ z-index:90; padding-bottom:calc(var(--bot) + 26px); }
+#idBackdrop{ z-index:85; }
+.id-x{ position:absolute; top:14px; right:14px; z-index:2; }
+.id-head{ text-align:center; padding:6px 30px 22px; }
+.id-mark{
+  width:54px; height:54px; margin:0 auto 15px; border-radius:17px;
+  background:var(--accent); color:var(--on-accent);
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--sh-accent);
+}
+.id-title{
+  font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:1.5rem;
+  letter-spacing:-.025em; margin-bottom:5px;
+}
+.id-sub{ font-size:13.5px; color:var(--muted); line-height:1.5; }
+.id-fields{ display:flex; flex-direction:column; gap:13px; }
+/* A roll number is a code, not prose — monospace and wide tracking make a typo visible,
+   and text-transform means it looks the way it will be stored. */
+#idRoll{ font-family:'JetBrains Mono',monospace; letter-spacing:.09em; text-transform:uppercase; }
+#idRoll::placeholder{ text-transform:none; letter-spacing:0; }
+/* Empty by default and taking no space, so the button doesn't jump when an error appears
+   — min-height reserves the line instead. */
+.id-error{
+  min-height:19px; margin:11px 2px 13px; font-size:12.5px; font-weight:500;
+  color:var(--red); line-height:1.4;
+}
+/* The offending field is outlined too: a message alone makes you re-read both inputs. */
+.field.bad input{ border-color:var(--red); box-shadow:0 0 0 3px var(--red-soft); }
+.field-help{ font-size:11px; color:var(--faint); margin-top:6px; line-height:1.4; }
+/* Confirmation the moment the six characters are right — on a phone that saves a round
+   trip of tapping Continue to find out. */
+.field.ok input{ border-color:var(--second); }
+.field.ok .field-help{ color:var(--second); }
+.field.ok .field-help::before{ content:'✓ '; font-weight:700; }
+.id-privacy{
+  display:flex; align-items:flex-start; gap:8px; margin-top:16px;
+  font-size:11.5px; color:var(--faint); line-height:1.5;
+}
+.id-privacy svg{ flex-shrink:0; margin-top:2px; opacity:.85; }
+
+/* "Rating as Pranav · 24Z201  [Change]" at the top of each sheet. */
+/* The bar itself is a <button>, so the whole row is the tap target rather than the
+   six characters of the word "Change". width:100% and text-align:left because a button
+   centres its content by default and would otherwise look nothing like the row it
+   replaces. */
+.whoami{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; text-align:left; cursor:pointer;
+  background:var(--accent-tint); border:1px solid var(--accent-line); border-radius:var(--r-sm);
+  padding:11px 13px; margin-bottom:14px; min-height:52px;
+  font-family:'Work Sans',sans-serif; font-size:12.5px; color:var(--ink-2);
+  transition:background .16s ease, border-color .16s ease;
+}
+.whoami:active{ background:var(--accent-soft); border-color:var(--accent); }
+.whoami:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.whoami b{ font-weight:600; }
+/* Still says what tapping does; it just isn't the only thing you can hit any more. */
+.whoami-cta{
+  flex-shrink:0; color:var(--accent-ink); font-size:12px; font-weight:700;
+  display:inline-flex; align-items:center; gap:4px;
+}
+.whoami-cta::after{ content:'›'; font-size:15px; line-height:1; opacity:.75; }
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:calc(var(--tabh) + var(--bot) + 18px);
+  transform:translateX(-50%) translateY(12px);
+  background:var(--ink); color:var(--bg); padding:13px 20px; border-radius:999px;
+  font-size:13.5px; font-weight:600; opacity:0; pointer-events:none;
+  transition:opacity .25s ease,transform .25s ease; z-index:95;
+  box-shadow:var(--sh-lg); max-width:calc(100% - 36px); text-align:center;
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ---------- Lock ---------- */
+#lockScreen{ position:fixed; inset:0; z-index:200; background:var(--bg);
+  display:flex; align-items:center; justify-content:center; padding:24px; transition:opacity .35s ease; }
+/* `visibility:hidden` matters as much as the opacity here. Without it the Unlock button
+   stays in the tab order and is still reachable by a screen reader, sitting invisibly on
+   top of the app — and Playwright hits it as a real click target too. */
+#lockScreen.hidden{ opacity:0; pointer-events:none; visibility:hidden; }
+.lock-card{ width:100%; max-width:340px; text-align:center; }
+.lock-card.shake{ animation:shake .4s ease; }
+@keyframes shake{ 10%,90%{transform:translateX(-2px);} 20%,80%{transform:translateX(4px);}
+  30%,50%,70%{transform:translateX(-8px);} 40%,60%{transform:translateX(8px);} }
+.lock-mark{ width:56px; height:56px; border-radius:17px; background:var(--accent); display:flex;
+  align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:var(--sh-accent); }
+.lock-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:1.8rem; letter-spacing:-.03em; margin-bottom:8px; }
+.lock-sub{ font-size:13.5px; color:var(--muted); margin-bottom:24px; line-height:1.55; }
+#pwInput{ width:100%; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
+  padding:15px; color:var(--ink); font-size:16px; text-align:center; letter-spacing:.1em;
+  margin-bottom:12px; font-family:'Work Sans',sans-serif; outline:none; min-height:52px; }
+#pwInput:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+#pwError{ font-size:12.5px; color:var(--red); min-height:20px; margin-top:12px; }
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+@media (min-width:760px){
+  .tabbar{ max-width:760px; left:50%; transform:translateX(-50%); right:auto; width:100%;
+    border-radius:var(--r-xl) var(--r-xl) 0 0; border:1px solid var(--line); border-bottom:none; }
+}
+</style>
+</head>
+<body class="locked">
+
+<div class="bg-layer">
+  <div class="bg-glow g1"></div><div class="bg-glow g2"></div><div class="bg-glow g3"></div>
+</div>
+<div class="bg-grain"></div>
+
+<!-- ---------------- Lock ---------------- -->
+<div id="lockScreen">
+  <div class="lock-card" id="lockCard">
+    <div class="lock-mark">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="#1b1f14" stroke-width="2"/><circle cx="12" cy="12" r="3.2" fill="#1b1f14"/>
+      </svg>
+    </div>
+    <div class="lock-title">Mess Menu</div>
+    <div class="lock-sub">Enter the access password to continue.</div>
+    <!-- A real <form> rather than a bare input: Chrome logs "Password field is not
+         contained in a form" otherwise, and on a phone the keyboard shows a Go key
+         instead of a plain return. -->
+    <!-- The <form> wrapper exists purely so the password field sits in one (Chrome warns
+         otherwise) and so password managers behave. Nothing here relies on the form
+         actually SUBMITTING: inside a sandboxed iframe — a chat preview, an embed, some
+         in-app browsers — Chrome blocks submission outright and never fires the submit
+         event, which silently killed both the Unlock button and the Enter key. So the
+         button is type="button" with its own click handler, and Enter is handled on the
+         input directly. onsubmit returns false as a last resort. -->
+    <form id="pwForm" onsubmit="return false;">
+      <!-- There's no real username — it's one shared code. Chrome still wants a username
+           field next to a password field, and giving it one also stops password managers
+           saving the code under a blank entry. -->
+      <input type="text" name="username" value="hostel" autocomplete="username"
+             tabindex="-1" aria-hidden="true" readonly style="display:none">
+      <input type="password" id="pwInput" name="password" placeholder="Password"
+             autocomplete="current-password" inputmode="text" enterkeyhint="go"
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); attemptUnlock(); }">
+      <button class="submit" type="button" onclick="attemptUnlock()">Unlock</button>
+    </form>
+    <div id="pwError"></div>
+  </div>
+</div>
+
+<!-- ---------------- Top bar ---------------- -->
+<header class="topbar" id="topbar">
+  <a class="tb-brand" href="#today">
+    <span class="tb-mark">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="#1b1f14" stroke-width="2.1"/><circle cx="12" cy="12" r="3.2" fill="#1b1f14"/>
+      </svg>
+    </span>
+    <span class="tb-title" id="tbTitle">Today</span>
+  </a>
+  <!-- Live clock and date, on every view. Whether a meal is still being served is the
+       question this app exists to answer, so the time it's working from should be on
+       screen rather than assumed. Updated by the existing 15s tick. -->
+  <div class="tb-clock" id="tbClock" aria-live="off">
+    <span class="tb-time" id="tbTime">--:--</span>
+    <span class="tb-date" id="tbDate">--/--/----</span>
+  </div>
+
+</header>
+
+<main>
+<!-- The page had NO h1 at all. Removing the per-view mastheads reclaimed the screen but
+     also took away the document's top-level heading, so a screen reader had h2s hanging
+     off nothing. Visually hidden rather than shown, because the top bar already tells a
+     sighted user where they are. -->
+<h1 class="sr-only">PSG Tech Hostel Mess Menu</h1>
+
+<!-- ============ TODAY ============ -->
+<section class="view on wrap" id="view-today">
+  <!-- The top bar already says "Today", so an eyebrow, a serif headline and a subtitle
+       saying the same thing cost 133px of a 844px phone before any food appears. All
+       that's left is the one line that carries information the top bar doesn't: the date. -->
+  <p class="viewline" id="dateline">Loading…</p>
+
+  <!-- Breakfast is not one menu. Which mess you eat at decides what "first up" even means,
+       so the choice belongs here, above the card, not buried in the Week tab. It's
+       remembered, because nobody switches hostels between meals. -->
+  <div class="seg today-seg" id="messSeg2">
+    <span class="seg-thumb" id="segThumb2"></span>
+    <button type="button" id="tier2-north" onclick="setMess('north')">North Indian</button>
+    <button type="button" id="tier2-south" onclick="setMess('south')">South Indian</button>
+  </div>
+
+  <!-- The one thing you opened the app for -->
+  <div class="now" id="nowCard">
+    <div class="now-top">
+      <div>
+        <div class="now-label" id="nowLabel">Up next</div>
+        <div class="now-meal" id="nowMeal">—</div>
+      </div>
+      <div class="now-time" id="nowTime"><span class="dot"></span><span id="nowTimeText">—</span></div>
+    </div>
+    <div class="now-items" id="nowItems"></div>
+    <div class="now-actions">
+      <button class="now-btn" id="nowRate" onclick="rateCurrentMeal()">Rate this meal</button>
+      <button class="now-btn ghost" onclick="go('week')">Full menu</button>
+    </div>
+  </div>
+
+  <div class="row-head">
+    <h2>Rest of today</h2>
+    <button onclick="go('week')">See week</button>
+  </div>
+  <div class="stack" id="restToday"></div>
+
+  <div class="row-head">
+    <h2>Quick actions</h2>
+  </div>
+  <div class="list">
+    <button class="list-item" onclick="openComplaintSheet()">
+      <span class="li-ico">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="li-body"><b>Report an issue</b><span>Hygiene, quality or a shortage</span></span>
+      <span class="li-arrow">›</span>
+    </button>
+    <a class="list-item" href="https://edviewx.psgtech.ac.in/Hostel/Student/StudentView" target="_blank" rel="noopener">
+      <span class="li-ico">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="li-body"><b>Book a meal</b><span>Opens the EDVIEWX portal</span></span>
+      <span class="li-arrow">›</span>
+    </a>
+  </div>
+</section>
+
+<!-- ============ WEEK ============ -->
+<section class="view wrap" id="view-week">
+  <div class="stickybar">
+    <div class="seg" id="messSeg">
+      <span class="seg-thumb" id="segThumb"></span>
+      <button type="button" id="tier-north" onclick="setMess('north')">North Indian</button>
+      <button type="button" id="tier-south" onclick="setMess('south')">South Indian</button>
+    </div>
+    <div class="day-rail" id="dayRow"></div>
+    <!-- Points at a gesture that already worked but was invisible. Retires itself the
+         first time it's used, and never appears on a device without a touchscreen. -->
+    <div class="swipe-hint" id="swipeHint" hidden>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M9 6 4.5 12 9 18M15 6l4.5 6-4.5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Swipe the menu to change day
+    </div>
+    <div class="filters">
+      <!-- Browse to Friday, then want to get back to what's on now: the day rail
+           scrolls, so "today" can be off-screen entirely. This is the way back. -->
+      <button class="fchip today-chip" id="todayChip" onclick="jumpToday()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Today
+      </button>
+      <button class="fchip" id="vegChip" onclick="toggleVegOnly()">
+        <span class="vnv veg"></span> Veg only
+      </button>
+      <button class="fchip" id="searchChip" onclick="go('search')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.1"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+        Find a dish
+      </button>
+    </div>
+  </div>
+
+  <div class="meals" id="main" style="margin-top:18px"></div>
+</section>
+
+<!-- ============ SEARCH ============ -->
+<section class="view wrap" id="view-search">
+  <!-- The subtitle moved into the input's placeholder, where it's read at the moment
+       it's useful rather than sitting above the box taking up a third of the screen. -->
+  <div class="search" id="searchBox">
+    <span class="si">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.1"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+    </span>
+    <input type="search" id="searchInput" placeholder="Search both messes, all 7 days" autocomplete="off" enterkeyhint="search">
+    <button class="sx" onclick="clearSearch()" aria-label="Clear">✕</button>
+  </div>
+  <div id="searchResults" style="margin-top:18px"></div>
+</section>
+
+<!-- ============ YOU ============ -->
+<section class="view wrap" id="view-you">
+  <div class="stats" id="youStats"></div>
+  <button type="button" class="whoami" id="youIdentity" hidden style="margin-top:16px" onclick="changeIdentity()" aria-label="Change your name and roll number"></button>
+  <div id="youBody"></div>
+</section>
+
+<!-- ============ MORE ============ -->
+<section class="view wrap" id="view-more">
+  <!-- Moved off the top bar. "Auto" follows the phone; the other two are here because
+       dark-on-bright is unreadable walking outdoors at midday and the OS won't know that. -->
+  <div class="setting">
+    <div class="setting-label">
+      <b>Appearance</b>
+      <span>Auto follows your phone. Pick Light if you read this outdoors.</span>
+    </div>
+    <div class="seg3" id="themeSeg" role="group" aria-label="Appearance">
+      <button type="button" class="seg3-btn" data-theme="light" onclick="setTheme('light')">Light</button>
+      <button type="button" class="seg3-btn" data-theme="dark"  onclick="setTheme('dark')">Dark</button>
+      <button type="button" class="seg3-btn" data-theme="auto"  onclick="setTheme('auto')">Auto</button>
+    </div>
+  </div>
+
+  <div class="install" id="installBar">
+    <span class="li-ico">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="install-b"><b>Add to home screen</b><span>Opens instantly, works offline</span></span>
+    <button onclick="installApp()">Install</button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="font-size:1.15rem;margin-bottom:14px">Feedback that comes back</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-n">1</span>
+        <span class="step-b"><b>You report it</b><p>Pick the mess, describe the problem, add a photo. About twenty seconds.</p></span>
+      </div>
+      <div class="step">
+        <span class="step-n">2</span>
+        <span class="step-b"><b>The committee sees it</b><p>It arrives with everything else reported that week, so patterns show rather than one-offs.</p></span>
+      </div>
+      <div class="step">
+        <span class="step-n">3</span>
+        <span class="step-b"><b>You get an answer</b><p>Submitted → Being looked at → Resolved, with a note where there is one.</p></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="font-size:1.15rem;margin-bottom:10px">About</h2>
+    <p style="font-size:14px;color:var(--muted);line-height:1.6">
+      This started as a question — what's for dinner? — that was annoyingly hard to answer without
+      walking down to find out. It's a small, free tool for PSG Tech hostellers, built by a student.
+      It isn't an official college service.
+    </p>
+    <p style="font-size:14px;color:var(--muted);line-height:1.6;margin-top:12px">
+      Serving G, AB and CD mess, across both the North and South Indian menus. If the menu is ever
+      wrong or out of date, report it and it gets fixed.
+    </p>
+  </div>
+
+  <div class="list">
+    <button class="list-item" onclick="openComplaintSheet()">
+      <span class="li-ico">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="li-body"><b>Report an issue</b><span>Goes to the mess committee</span></span>
+      <span class="li-arrow">›</span>
+    </button>
+    <button class="list-item" onclick="openSheet()">
+      <span class="li-ico">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="m12 3 2.7 5.8 6.3.8-4.6 4.3 1.2 6.1-5.6-3-5.6 3 1.2-6.1L3 9.6l6.3-.8L12 3Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="li-body"><b>Rate a meal</b><span>Any meal that's already been served</span></span>
+      <span class="li-arrow">›</span>
+    </button>
+    <a class="list-item" href="https://edviewx.psgtech.ac.in/Hostel/Student/StudentView" target="_blank" rel="noopener">
+      <span class="li-ico">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="li-body"><b>Book a meal</b><span>EDVIEWX student portal</span></span>
+      <span class="li-arrow">›</span>
+    </a>
+  </div>
+
+  <p style="font-size:12px;color:var(--faint);text-align:center;margin-top:24px;line-height:1.7">
+    Egg / Chicken / Chilli Gobi served on token basis.<br>Menu may vary with store availability.
+  </p>
+</section>
+
+</main>
+
+<!-- ---------------- Bottom tabs ---------------- -->
+<nav class="tabbar" id="tabbar">
+  <button class="tab on" data-view="today" onclick="go('today')">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    Today
+  </button>
+  <button class="tab" data-view="week" onclick="go('week')">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-linecap="round"/></svg></span>
+    Week
+  </button>
+  <button class="tab" data-view="you" onclick="go('you')">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 2.7 5.8 6.3.8-4.6 4.3 1.2 6.1-5.6-3-5.6 3 1.2-6.1L3 9.6l6.3-.8L12 3Z" stroke="currentColor" stroke-linejoin="round"/></svg></span>
+    You
+    <span class="badge" id="youBadge" hidden>0</span>
+  </button>
+  <button class="tab" data-view="more" onclick="go('more')">
+    <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor"/><path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-linecap="round"/></svg></span>
+    More
+  </button>
+</nav>
+
+<!-- ---------------- Rating sheet ---------------- -->
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<!-- ---------------- Who's rating (shown once, then remembered) ---------------- -->
+<div class="backdrop" id="idBackdrop" onclick="closeIdentity()"></div>
+<div class="sheet" id="idSheet">
+  <div class="grab"></div>
+  <button class="x id-x" onclick="closeIdentity()" aria-label="Close">✕</button>
+  <div class="id-head">
+    <div class="id-mark" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8.5" r="3.8" stroke="currentColor" stroke-width="2"/>
+        <path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="id-title" id="idTitle">Who's rating?</div>
+    <div class="id-sub">Asked once, then remembered.</div>
+  </div>
+  <form id="idForm" onsubmit="return false;">
+    <div class="id-fields">
+      <div class="field" id="idNameField">
+        <label for="idName">Name</label>
+        <input type="text" id="idName" autocomplete="name" enterkeyhint="next"
+               placeholder="Your full name" oninput="clearIdentityError()">
+      </div>
+      <div class="field" id="idRollField">
+        <label for="idRoll">Roll number</label>
+        <input type="text" id="idRoll" class="mono" autocomplete="off" autocapitalize="characters"
+               spellcheck="false" enterkeyhint="done" placeholder="24Z201" maxlength="6"
+               aria-describedby="idRollHelp" oninput="formatRollInput(this)"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();submitIdentity();}">
+        <div class="field-help" id="idRollHelp">Two digits, a letter, three digits — like 24Z201</div>
+      </div>
+    </div>
+    <div class="id-error" id="idError" role="alert"></div>
+    <button class="submit" type="button" onclick="submitIdentity()">Continue</button>
+  </form>
+  <div class="id-privacy">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.4" stroke="currentColor" stroke-width="2"/>
+      <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span>Stays on this device and goes only to the mess committee. Change it any time from the You tab.</span>
+  </div>
+</div>
+
+<!-- ---------------- One meal, expanded ---------------- -->
+<div class="backdrop" id="mealBackdrop" onclick="closeMealSheet()"></div>
+<div class="sheet" id="mealSheet">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <div>
+      <div class="sheet-title" id="mealSheetTitle">Meal</div>
+      <div class="sheet-sub" id="mealSheetTime" style="margin-top:2px"></div>
+    </div>
+    <button class="x" onclick="closeMealSheet()" aria-label="Close">✕</button>
+  </div>
+  <div class="items" id="mealSheetItems"></div>
+  <div class="note" id="mealSheetNote" hidden></div>
+  <button class="rate-btn" id="mealSheetRate"></button>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <div class="sheet-title">Rate your meal</div>
+    <button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+  </div>
+  <button type="button" class="whoami" id="rateWhoami" hidden onclick="changeIdentity()" aria-label="Change your name and roll number"></button>
+
+  <!-- What you're rating, as one line. All four pickers below open ALREADY CORRECT —
+       the hall you last used, the menu on screen, today, the meal being served — so
+       presenting them as four form fields made a one-tap action look like a four-step
+       form, and on iOS each <select> is a modal wheel. They're collapsed behind this
+       until something is actually wrong. -->
+  <button type="button" class="ctx" id="rateCtx" onclick="toggleRateFields()" aria-expanded="false" aria-controls="rateFields">
+    <span class="ctx-body">
+      <span class="ctx-main" id="ctxMain">—</span>
+      <span class="ctx-sub" id="ctxSub">—</span>
+    </span>
+    <span class="ctx-cta" id="ctxCta">Change</span>
+  </button>
+
+  <div class="fields" id="rateFields" hidden>
+    <div class="field"><label>Mess Hall</label><select id="fHall"></select></div>
+    <div class="field"><label>Menu</label><select id="fMenu"></select></div>
+    <div class="field full"><label>Day</label><input type="date" id="fDay"></div>
+    <div class="field full"><label>Meal</label><select id="fMeal"></select></div>
+  </div>
+  <div class="lock-note" id="lockNote"></div>
+
+  <!-- The point of the sheet, first and biggest. -->
+  <div class="stars" id="starsRow"></div>
+  <div class="star-hint" id="starHint">Tap to rate</div>
+
+  <textarea id="fComment" placeholder="Anything to tell the mess committee? (optional)"></textarea>
+  <button class="submit" onclick="submitFeedback()">Submit feedback</button>
+  <!-- Was "Shared with other students using this app" — untrue while no GET endpoint
+       exists. The rating does reach the committee's backend; it just isn't visible to
+       anyone else yet. Say only what's actually happening. -->
+  <div class="shared-note">Goes to the mess committee.</div>
+  <div class="sheet-loading" id="feedbackLoading">
+    <div class="cooking" aria-hidden="true">
+      <div class="pan"><div class="pan-body"></div><div class="pan-handle"></div></div>
+      <span class="bit b1">🍛</span><span class="bit b2">🥘</span><span class="bit b3">🍲</span>
+      <div class="steam"><i></i><i></i><i></i></div>
+    </div>
+    <div class="loading-text" id="feedbackLoadingText">Sending it over…</div>
+    <div class="loading-sub" id="feedbackLoadingSub"></div>
+  </div>
+</div>
+
+<!-- ---------------- Complaint sheet ---------------- -->
+<div class="backdrop" id="complaintBackdrop" onclick="closeComplaintSheet()"></div>
+<div class="sheet" id="complaintSheet">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <div class="sheet-title">Report an issue</div>
+    <button class="x" onclick="closeComplaintSheet()" aria-label="Close">✕</button>
+  </div>
+  <div class="sheet-sub">Hygiene, food quality, shortages — this goes to the mess committee.</div>
+  <button type="button" class="whoami" id="complaintWhoami" hidden onclick="changeIdentity()" aria-label="Change your name and roll number"></button>
+  <div class="fields" style="grid-template-columns:1fr">
+    <div class="field"><label>Mess Hall</label>
+      <select id="cMess"><option value="g">G Mess</option><option value="ab">AB Mess</option><option value="cd">CD Mess</option></select>
+    </div>
+  </div>
+  <textarea id="cComment" placeholder="What happened? Be as specific as you can…" style="min-height:104px"></textarea>
+  <div class="photo-row">
+    <label class="photo-btn" for="photoInput">📷 Add a photo</label>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(event)">
+    <img id="photoPreview" class="photo-preview" alt="preview">
+    <button class="photo-remove" id="photoRemoveBtn" onclick="removePhoto()">Remove</button>
+  </div>
+  <button class="submit danger" onclick="submitComplaint()">Submit report</button>
+  <div class="shared-note">You'll get a reference number to follow it up with.</div>
+  <div class="sheet-loading" id="complaintLoading">
+    <div class="cooking" aria-hidden="true">
+      <div class="pan"><div class="pan-body"></div><div class="pan-handle"></div></div>
+      <span class="bit b1">📋</span><span class="bit b2">🔔</span><span class="bit b3">✅</span>
+      <div class="steam"><i></i><i></i><i></i></div>
+    </div>
+    <div class="loading-text" id="complaintLoadingText">Sending it over…</div>
+    <div class="loading-sub" id="complaintLoadingSub"></div>
+  </div>
+</div>
+
+<!-- kept so existing code that targets them keeps working; the You tab is the real view now -->
+<div class="backdrop" id="mySubBackdrop" onclick="closeMySubmissions()"></div>
+<div class="sheet" id="mySubSheet">
+  <div class="grab"></div>
+  <div class="sheet-head"><div class="sheet-title">Your history</div>
+    <button class="x" onclick="closeMySubmissions()" aria-label="Close">✕</button></div>
+  <div class="sheet-sub">Saved on this device.</div>
+  <div id="mySubBody"></div>
+</div>
+
+<div class="toast" id="toast">Thanks — feedback saved!</div>
+<script>
+
+
+/* ---------------- STORAGE BACKING ----------------
+   The whole app persists through `window.storage.get/set(key, isShared)`. Some hosts inject
+   that global; a plain browser does not, which silently disabled theme memory, the unlock flag,
+   once-per-meal rating locks, star averages and "My submissions". This provides a localStorage
+   fallback with the same shape, only when nothing else has claimed window.storage.
+
+   Caveat: localStorage is per-device, so the `isShared` flag can't be honoured — "shared"
+   values are really this device only until a backend GET endpoint serves aggregates. */
+(function ensureStorage(){
+  if (window.storage) return; // a host-provided store wins — don't clobber it
+  const NS = 'psgmess:';
+  window.storage = {
+    async get(key){
+      try{
+        const v = localStorage.getItem(NS + key);
+        return v === null ? null : { value: v };
+      }catch(e){ return null; }   // private mode / blocked storage
+    },
+    async set(key, value){
+      try{ localStorage.setItem(NS + key, value); }catch(e){ /* quota or blocked — non-fatal */ }
+    }
+  };
+})();
+
+/* ---------------- PASSWORD LOCK ---------------- */
+const APP_PASSWORD = "Psg123";
+
+function hideLock(){
+  document.getElementById('lockScreen').classList.add('hidden');
+  document.body.classList.remove('locked');
+}
+async function checkStoredUnlock(){
+  try{
+    if (window.storage){
+      const res = await window.storage.get('device_unlocked', false);
+      if (res && res.value === 'true') return true;
+    }
+  }catch(e){ /* not unlocked yet */ }
+  return false;
+}
+async function attemptUnlock(){
+  const input = document.getElementById('pwInput');
+  if (input.value === APP_PASSWORD){
+    hideLock();
+    if (window.storage){
+      try{ await window.storage.set('device_unlocked', 'true', false); }catch(e){ /* non-fatal */ }
+    }
+  }else{
+    document.getElementById('pwError').textContent = "Incorrect password — try again.";
+    input.value = "";
+    const card = document.getElementById('lockCard');
+    card.classList.remove('shake');
+    void card.offsetWidth; // restart animation
+    card.classList.add('shake');
+  }
+}
+(async () => { if (await checkStoredUnlock()) hideLock(); })();
+
+/* ---------------- THEME (light / dark) ---------------- */
+// Chrome refuses (and logs a warning about) vibrate before the user has interacted,
+// and boot() can route to a hash-linked view before any tap has happened.
+let userHasInteracted = false;
+['pointerdown','keydown','touchstart'].forEach(evt =>
+  window.addEventListener(evt, () => { userHasInteracted = true; }, { once:true, passive:true }));
+function haptic(ms){
+  if (!userHasInteracted) return;
+  if (navigator.vibrate) { try{ navigator.vibrate(ms || 10); }catch(e){ /* unsupported */ } }
+}
+
+// Warm dark is the design default; "light" is a warm-paper day mode.
+/* Light / Dark / Auto, and it lives in the More tab rather than the top bar.
+   The top-right corner is the hardest place on a phone for a thumb to reach, and it was
+   spending that space on a control most people touch twice ever. Three-way rather than a
+   toggle because "auto" (follow the phone) is what most people want, and because someone
+   reading this walking to the mess in noon sunlight needs to be able to FORCE light —
+   dark-on-bright is the one combination that is genuinely unreadable outdoors. */
+let themePref = 'auto';   // 'light' | 'dark' | 'auto'
+
+function resolvedTheme(pref){
+  if (pref === 'light' || pref === 'dark') return pref;
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+}
+function applyTheme(mode){
+  document.body.classList.toggle('light', mode === 'light');
+  const meta = document.getElementById('themeColorMeta');
+  if (meta) meta.setAttribute('content', mode === 'light' ? '#f7f3e9' : '#12150f');
+}
+function renderThemeSeg(){
+  document.querySelectorAll('#themeSeg .seg3-btn').forEach(b => {
+    const on = b.dataset.theme === themePref;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+}
+async function setTheme(pref){
+  haptic(8);
+  themePref = pref;
+  applyTheme(resolvedTheme(pref));
+  renderThemeSeg();
+  try{
+    if (window.storage) await window.storage.set('theme_pref', pref, false);
+  }catch(e){ /* non-fatal */ }
+}
+async function initTheme(){
+  try{
+    if (window.storage){
+      const res = await window.storage.get('theme_pref', false);
+      // 'light'/'dark' may be stored from the old two-way toggle; both still mean the same.
+      if (res && ['light','dark','auto'].includes(res.value)) themePref = res.value;
+    }
+  }catch(e){ /* no saved preference yet */ }
+  applyTheme(resolvedTheme(themePref));
+  renderThemeSeg();
+}
+// On 'auto', follow the phone if it flips (scheduled dark mode, or sunset).
+if (window.matchMedia){
+  try{
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+      if (themePref === 'auto') applyTheme(resolvedTheme('auto'));
+    });
+  }catch(e){ /* older Safari has no addEventListener here; not worth a fallback */ }
+}
+initTheme();
+
+/* ---------------- MENU DATA ---------------- */
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const DAY_ABBR = {Sunday:"SUN",Monday:"MON",Tuesday:"TUE",Wednesday:"WED",Thursday:"THU",Friday:"FRI",Saturday:"SAT"};
+
+/* ONE set of meal names for the whole app.
+   The two messes used to carry their own: North said Breakfast/Lunch/Evening/Dinner and
+   South said Morning/Afternoon/Evening/Night, so the same 12:00 sitting was called two
+   different things depending on a toggle — and the rating history, which uses the generic
+   labels, called it a third. Both messes now point at this object rather than owning a
+   copy, which is what stops them drifting apart again. */
+const MEAL_LABELS = { breakfast:"Breakfast", lunch:"Lunch", evening:"Evening Snacks", dinner:"Dinner" };
+
+const MENU = {
+  north: {
+    label: "North Indian Mess",
+    mealLabels: MEAL_LABELS,
+    mealTimes: {breakfast:"7:30 – 9:30 AM", lunch:"12:00 – 2:00 PM", evening:"4:30 – 6:00 PM", dinner:"7:30 – 9:30 PM"},
+    common: {breakfast:"Always available: Tea, Coffee, Milk, Bread Toast, Butter & Jam", evening:"Banana (1) served daily · alternate varieties: Karpuravalli / Poovan / Morris / Red Banana"},
+    days: {
+      Monday:{ breakfast:["Cabbage Paratha","Choley","Suji Halwa","Curd","Daliya","Boiled Egg"],
+        lunch:["Patta Gobi Aloo","Dal","Rice","Salad","Papad","Omelette","Roti","Salad Raitha","Lemon Juice"],
+        evening:["Chat Papdi","Ginger Tea","Coffee","Milk"],
+        dinner:["Romali Roti","Mixed Veg Salna","Salad Raitha","Kheer","Egg Gravy","Plain Rice","Dal"] },
+      Tuesday:{ breakfast:["Plain Paratha","Daliya","Poha","Boiled Egg"],
+        lunch:["Kashmiri Channa","Dal Tadka","Puri","Rice","Salad","Sweet","Papad","Boiled Egg","Butter Milk"],
+        evening:["Sweet Corn","Tea","Coffee","Milk"],
+        dinner:["Tandoori Roti","Mattar Paneer","Chilli Gobi","Rice","Dal Tadka"] },
+      Wednesday:{ breakfast:["Aata / Channa Halwa","Poha","Onion Paratha","Boiled Egg"],
+        lunch:["Aloo Gobi","Plain Paratha","Channa Dal","Salad","Omelette","Salad Raitha","Rice"],
+        evening:["Cutlet (1)","Tea","Milk","Sukku Coffee"],
+        dinner:["Naan","Palak Paneer","Raitha","Butter Chicken Gravy","Rice","Dal Tadka"] },
+      Thursday:{ breakfast:["Onion Paratha","Curd","Daliya","Boiled Egg"],
+        lunch:["Roti","Rice","Dhal Makhni","Bottleguard Sabzi","Salad","Boiled Egg","Salt Lassi","Brinjal Fry","Icecream"],
+        evening:["Aloo Samosa (1)","Tea","Milk","Coffee"],
+        dinner:["Choley Kulcha","Chilli Paneer","Panner Tikka","Carrot Halwa","Dal Tadka","Rice"] },
+      Friday:{ breakfast:["Plain Paratha","Choley","Daliya","Curd","Boiled Egg"],
+        lunch:["Roti","Chhota Nutry Aloo","Raitha","Salad","Omelette","Lemon Juice"],
+        evening:["Veg Puff (1)","Tea","Milk","Coffee"],
+        dinner:["Tandoori Roti","Raitha","Rice","Paneer Makhna","Chicken Dou Pyaaza","Omelette","Gulab Jamun"] },
+      Saturday:{ breakfast:["Roti","Bun Maska","Daliya","Boiled Egg"],
+        lunch:["Veg Biriyani","Rice","Dal","Salt Lassi","Omelette","Kaala Channa","Plain Paratha","Raitha"],
+        evening:["Pakoda / Bajji","Tea","Coffee","Milk"],
+        dinner:["Dry Gobi Tamatar","Dal Tadka","Bread Halwa","Papad","Rice"] },
+      Sunday:{ breakfast:["Aloo Paratha & Tamatar Chutney","Choley","Curd","Daliya","Boiled Egg"],
+        lunch:["Tandoori Roti","Rice","Aloo Capsicum","Paneer Kurma","Salad","Raitha","Boiled Egg","Schezwan Chicken"],
+        evening:["Groundnut Salad","Tea","Coffee","Milk"],
+        dinner:["Naan","Dal Tadka","Raitha","Rice","Egg Gravy","Moong Dal Halwa","Rajma"] }
+    }
+  },
+  south: {
+    label: "South Indian Mess",
+    mealLabels: MEAL_LABELS,
+    mealTimes: {breakfast:"7:30 – 9:30 AM", lunch:"12:00 – 2:00 PM", evening:"4:30 – 6:00 PM", dinner:"7:30 – 9:30 PM"},
+    common: {breakfast:"Always available: Tea, Coffee, Milk, Bread & Jam", dinner:"Always with dinner: Rice, Rasam, Curd Rice, Banana (1)"},
+    days: {
+      Monday:{ breakfast:["Idli","Urad Dal Vada (1)","Mix Veg Sambar","Idli Podi","Rava Upma","Mint Chutney","Ragi Porridge","Sesame Oil"],
+        lunch:["Sambar","Rice","Rasam","Curd","Beetroot Fry","Boiled Egg (Full)","Ghee","Lemon Juice","Vegetable Salad","Dal Powder","Tapioca Chips","Buttermilk Chilli"],
+        evening:["Masala Vada (1)","Ginger Tea","Coffee","Milk"],
+        dinner:["Rumali Roti (3)","Tamarind Rice","Paneer Butter Masala","Boiled Egg","Egg Gravy (2)","Coconut Chutney","Pickle"] },
+      Tuesday:{ breakfast:["Idiyappam","Coconut Milk","Sweet Pongal","Rava Khichdi","Coconut Chutney","Ragi Porridge","Vegetable Salad","Almond Milk"],
+        lunch:["Sweet","Soya Biryani","Veg Guruma","Curd Pachadi","Rice","Rasam","Curd","Boiled Egg","Potato Chips","Tomato Pickle","Buttermilk Chilli"],
+        evening:["Sweet Corn","Tea","Coffee","Milk"],
+        dinner:["Chapati","Chickpea Kurma","Chicken Gravy","Gobi Chilli","Boiled Egg","Egg Gravy (2)","Jam","Kammanjore","Pickle"] },
+      Wednesday:{ breakfast:["Venpongal","Aval Upma","Ulundhu Vada (1)","Sambar","Coconut Chutney","Ragi Porridge"],
+        lunch:["Green Gram Gravy","Rice","Rasam","Curd","Soya Dry","Omelette","Egg Gravy (2)","Mango Ginger Pickle","Veg Soup","Buttermilk Chilli","Applam"],
+        evening:["Cutlet (1) & Sauce","Tea","Coffee","Milk"],
+        dinner:["Dosa","Lemon Rice","Coconut Chutney","Tomato Thokku","Sambar","Boiled Egg","Pickle","Idli Powder","Sesame Oil"] },
+      Thursday:{ breakfast:["Idli","Samba Rava Upma","Tomato Chutney","Knolkhol Sambar","Sesame Powder","Sesame Oil","Ragi Porridge"],
+        lunch:["Drumstick Sambar","Rice","Rasam","Curd","Cabbage Fry","Applam","Omelette","Mango Pickle","Sesame Oil","Icecream","Buttermilk Chilli"],
+        evening:["Potato Samosa (1)","Tea","Milk","Coffee"],
+        dinner:["Chapati","White Kurma","Pepper Chicken Gravy","Mushroom Manchurian","Jam","Kammanchoru Rice","Pickle"] },
+      Friday:{ breakfast:["Kesari","Sirudhaniya Pongal","Urad Dal Vada (1)","Sambar","Coconut Chutney","Bread Toast","Omelette","Butter","Kammankool","Vegetable Salad"],
+        lunch:["Chickpea Gravy","Rice","Rasam","Curd","Carrot Poriyal","Applam","Boiled Egg (Full)","Milk Payasam","Garlic Pickle","Tomato Paste","Buttermilk Chilli"],
+        evening:["Veg Puff (1)","Tea","Milk","Coffee"],
+        dinner:["Malabar Ghee Rice","Tomato Rice","Brinjal Thokku","Coconut Chutney","Boiled Egg","Potato Chips","Pickles"] },
+      Saturday:{ breakfast:["Roast","Chickpea Curry","Rava Upma","Idli Powder","Sesame Oil","Coconut Chutney","Ragi Porridge","Ragi Malt"],
+        lunch:["Radish Sambar","Rice","Kovakki Poriyal","Rasam","Curd","Peanut Chutney","Egg Gravy (2)","Applam","Buttermilk","Ghee","Buttermilk Chilli"],
+        evening:["Medhu Pakoda / Banana Bajji (2)","Chutney","Tea","Coffee","Milk"],
+        dinner:["Idli","Kumbakonam Gravy","Coconut Chutney","Mint Rice","Potato Chips","Pickles","Idli Powder","Sesame Oil"] },
+      Sunday:{ breakfast:["Bread Toast","Bombay Toast","Rice Porridge","Rava Upma","Omelette","Butter","Mint Chutney","Vegetable Salad"],
+        lunch:["Veg Biryani","Veg Guruma","Curd Pachadi","Rice","Rasam","Curd","Potato Chips","Boiled Egg","Gobi Chilli","Pallipalayam Chicken Gravy","Buttermilk Chilli","Lemon Juice"],
+        evening:["Peanut Salad","Tea","Milk","Chukku Coffee"],
+        dinner:["Kal Dosa","Coconut Rice","Tomato Gravy","Peanut Chutney","Idli Powder","Pickle","Sesame Oil"] }
+    }
+  }
+};
+const MEAL_KEYS = ["breakfast","lunch","evening","dinner"];
+const BOOK_URL = "https://edviewx.psgtech.ac.in/Hostel/Student/StudentView";
+
+// Generic meal-slot labels used in the rating sheet, independent of which mess is picked there.
+// Kept as an alias so the ~6 existing call sites keep working; same object, never a copy.
+const GENERIC_MEAL_LABELS = MEAL_LABELS;
+
+// The 3 physical mess halls — where you actually eat. Used by both the complaint sheet and
+// the "Mess Hall" dropdown in the rating sheet.
+const REVIEW_MESSES = [
+  { value:"g",  label:"G Mess" },
+  { value:"ab", label:"AB Mess" },
+  { value:"cd", label:"CD Mess" }
+];
+// The 2 menu styles served — a separate concept from which hall you're in. Its own dropdown
+// in the rating sheet, deliberately not merged with the hall picker above.
+const MENUS = [
+  { value:"north", label:"North Indian" },
+  { value:"south", label:"South Indian" }
+];
+function messLabelFor(code){
+  const found = REVIEW_MESSES.find(m => m.value === code);
+  return found ? found.label : code;
+}
+function menuLabelFor(code){
+  const found = MENUS.find(m => m.value === code);
+  return found ? found.label : code;
+}
+
+/* ---------------- HELPERS ---------------- */
+// Student-written text (comments, complaints) is rendered into innerHTML in a few places —
+// escape it so a stray "<" can't break the markup or inject anything.
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ---------------- DATE / TIME HELPERS ---------------- */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function todayISO(){ return toISODate(new Date()); }
+function weekdayOfISO(iso){
+  const [y,mo,da] = iso.split('-').map(Number);
+  return DAYS[new Date(y, mo-1, da).getDay()];
+}
+// The date this weekday falls on in the current Mon–Sun week. May be in the future —
+// and that is the point. The rating flow used to map a future weekday back to its most
+// recent PAST occurrence, so tapping "rate Friday" on a Tuesday silently rated last
+// Friday's lunch. A day on the rail now means the date on the rail, full stop, and a
+// future date is simply not rateable.
+function dateOfThisWeek(dayName){
+  const d = new Date();
+  d.setDate(d.getDate() + (DISPLAY_DAYS.indexOf(dayName) - DISPLAY_DAYS.indexOf(todayName)));
+  return d;
+}
+function isoOfThisWeek(dayName){ return toISODate(dateOfThisWeek(dayName)); }
+
+// A meal can be rated for 12 hours from the moment it starts being served, then never.
+//
+// This replaces the old "opens at the serving time, stays open for the rest of the day,
+// plus 7 days of back-rating" rule. The point is data you can trust: a score entered
+// within half a day of eating is a memory, and one entered four days later is a mood.
+// 12 hours is also exactly what makes last night's dinner (7:30 PM) rateable over
+// breakfast the next morning and closed by 7:30 AM, which is the natural human window.
+const RATING_WINDOW_HOURS = 12;
+
+// Construct the local Date at which a given (date, meal) starts. Built from the parts
+// rather than Date.parse(dateISO) — the latter treats a bare YYYY-MM-DD as UTC, which
+// would shift the whole window by the timezone offset (5h30m here, enough to be wrong).
+function mealOpensAt(dateISO, mealKey){
+  const [y, mo, d] = dateISO.split('-').map(Number);
+  const [h, mi] = MEAL_START[mealKey];
+  return new Date(y, mo - 1, d, h, mi, 0, 0);
+}
+function mealClosesAt(dateISO, mealKey){
+  return new Date(mealOpensAt(dateISO, mealKey).getTime() + RATING_WINDOW_HOURS * 3600 * 1000);
+}
+// The oldest date that could still have anything open: a meal from more than 12h ago is
+// shut, so nothing before yesterday can be rated.
+function earliestRatableISO(){
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toISODate(d);
+}
+
+// A meal can only be rated once its serving window has actually started.
+const MEAL_START = { breakfast:[7,30], lunch:[12,0], evening:[16,30], dinner:[19,30] };
+function formatMealStart(mealKey){
+  const [h,m] = MEAL_START[mealKey];
+  const hr12 = h % 12 || 12;
+  const ap = h >= 12 ? 'PM' : 'AM';
+  return `${hr12}:${pad2(m)} ${ap}`;
+}
+// Can this (date, meal) be rated right now? One rule, one window: [start, start + 12h).
+function mealTimeReached(dateISO, mealKey){
+  if (!MEAL_START[mealKey]) return false;
+  const now = Date.now();
+  return now >= mealOpensAt(dateISO, mealKey).getTime()
+      && now <  mealClosesAt(dateISO, mealKey).getTime();
+}
+// Why is it locked? Drives the button label, so a student isn't left guessing.
+function lockReason(dateISO, mealKey){
+  if (!MEAL_START[mealKey]) return 'expired';
+  const now = Date.now();
+  if (now < mealOpensAt(dateISO, mealKey).getTime()){
+    return dateISO > todayISO() ? 'future' : 'not-yet';
+  }
+  if (now >= mealClosesAt(dateISO, mealKey).getTime()) return 'expired';
+  return null;
+}
+// "4 hr 20 min left" — shown while a window is open so the deadline is never a surprise.
+function ratingTimeLeft(dateISO, mealKey){
+  return Math.max(0, Math.round((mealClosesAt(dateISO, mealKey).getTime() - Date.now()) / 60000));
+}
+
+/* ---------------- LIVE MEAL WINDOWS (for the "up next" strip + countdowns) ---------------- */
+// Closing times, mirroring the ranges shown on each meal card.
+const MEAL_END = { breakfast:[9,30], lunch:[14,0], evening:[18,0], dinner:[21,30] };
+function minsOf(hm){ return hm[0]*60 + hm[1]; }
+function nowMins(){ const d = new Date(); return d.getHours()*60 + d.getMinutes(); }
+// "42 min" / "2 hr 10 min" / "1 hr"
+function formatGap(mins){
+  if (mins < 1) return "less than a minute";
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins/60), m = mins % 60;
+  return m ? `${h} hr ${m} min` : `${h} hr`;
+}
+// Where are we in the day? Returns {state:'serving'|'upcoming'|'done', meal, mins}
+function mealClock(){
+  const n = nowMins();
+  for (const k of MEAL_KEYS){
+    if (n >= minsOf(MEAL_START[k]) && n < minsOf(MEAL_END[k])){
+      return { state:'serving', meal:k, mins: minsOf(MEAL_END[k]) - n };
+    }
+  }
+  for (const k of MEAL_KEYS){
+    if (n < minsOf(MEAL_START[k])){
+      return { state:'upcoming', meal:k, mins: minsOf(MEAL_START[k]) - n };
+    }
+  }
+  // past dinner — next thing is tomorrow's breakfast
+  return { state:'done', meal:'breakfast', mins: (24*60 - n) + minsOf(MEAL_START.breakfast) };
+}
+
+// Recurring weekly specials — always shows up on this day/meal, so it's called out with a highlight chip.
+const SPECIALS = {
+  Tuesday: { lunch: ["Sweet"] },
+  Thursday: { lunch: ["Icecream"] }
+};
+const SPECIAL_ICONS = { "Icecream": "🍨", "Sweet": "🍬" };
+function isSpecial(day, meal, item){
+  return !!(SPECIALS[day] && SPECIALS[day][meal] && SPECIALS[day][meal].includes(item));
+}
+
+// Paid add-on items — bookable through the student portal at a fixed per-piece price.
+const PRICED_ITEMS = {
+  "gobi chilli":                 { price: 40, label: "Gobi Chilli", veg: true },
+  "chilli gobi":                 { price: 40, label: "Gobi Chilli", veg: true },
+  "mushroom manchurian":         { price: 60, label: "Mushroom Manchurian", veg: true },
+  "chicken gravy":               { price: 80, label: "Chicken Gravy", veg: false },
+  "omelette":                    { price: 10, label: "Omelette", veg: false },
+  "boiled egg":                  { price: 10, label: "Boiled Egg", veg: false },
+  "boiled egg (full)":           { price: 10, label: "Full Boiled Egg", veg: false },
+  "full boil egg":               { price: 10, label: "Full Boiled Egg", veg: false },
+  "egg gravy (2)":               { price: 25, label: "Egg Gravy (2)", veg: false },
+  "pepper chicken gravy":        { price: 80, label: "Pepper Chicken Gravy", veg: false },
+  "pallipalayam chicken gravy":  { price: 80, label: "Pallipalayam Chicken Gravy", veg: false },
+  "butter chicken gravy":        { price: 80, label: "Butter Chicken Gravy", veg: false },
+  "panner tikka":                { price: 80, label: "Panner Tikka", veg: true },
+  "egg gravy":                   { price: 25, label: "Egg Gravy", veg: false },
+  "chicken dou pyaaza":          { price: 80, label: "Chicken Dou Pyaaza", veg: false },
+  "schezwan chicken":            { price: 80, label: "Schezwan Chicken", veg: false }
+};
+/* Veg / non-veg marking for EVERY item, not just the paid ones.
+   Word-boundary matching keeps look-alikes safe: "Chickpea" isn't chicken, "Vegetable" isn't egg. */
+const NONVEG_PATTERN = /\b(egg|eggs|chicken|mutton|fish|prawn|prawns|meat|keema)\b/i;
+// Explicit overrides for anything the pattern would miss or get wrong.
+const NONVEG_EXTRA = new Set([]);
+const VEG_EXTRA = new Set(['eggless cake']);
+function isNonVeg(item){
+  const s = item.trim().toLowerCase();
+  const priced = getPriced(item);
+  if (priced) return !priced.veg;      // the price table is the authority where it has an entry
+  if (VEG_EXTRA.has(s)) return false;
+  if (NONVEG_EXTRA.has(s)) return true;
+  return NONVEG_PATTERN.test(s);
+}
+function vnvMark(item){
+  return `<span class="vnv ${isNonVeg(item) ? 'nonveg' : 'veg'}"></span>`;
+}
+function getPriced(item){
+  return PRICED_ITEMS[item.trim().toLowerCase()] || null;
+}
+
+/* ---------------- STATE ---------------- */
+const now = new Date();
+const todayName = DAYS[now.getDay()];
+/* Declared up here, not down with toggleVegOnly() where it reads more naturally.
+   `visibleItems()` is now called from renderToday(), and the top-level `tick()` call runs
+   renderToday() partway through the script — before a `let` further down has initialised.
+   `let` hoists into a temporal dead zone rather than to `undefined`, so reading it there
+   throws "Cannot access 'vegOnly' before initialization", which killed every line of
+   script after it: no router, no boot, a blank app. Shared mutable state gets declared
+   before anything can reach it. */
+let vegOnly = false;
+
+let state = {
+  mess: "north",
+  day: todayName,
+  sheetStars: 0,
+  deviceUserId: null,
+  feedbackCache: {} // key `${mess}_${day}` -> data object
+};
+
+/* ---------------- RENDER: HEADER/CLOCK ---------------- */
+// Every 15s: keep the top-bar clock, the Now card and the "Opens in 42 min" countdowns
+// honest. 15s is fine for a minute-resolution clock — the worst case is the displayed
+// minute being a few seconds stale, which nobody can perceive without a second reference.
+function tick(){
+  renderClock();
+  renderToday();
+  refreshLockedButtons();
+}
+
+// d/m/y as asked — note that's the Indian convention and the opposite of the ISO strings
+// used internally for rating keys, so these two must never be swapped by accident.
+function renderClock(){
+  const t = document.getElementById('tbTime');
+  const d = document.getElementById('tbDate');
+  if (!t && !d) return;
+  const n = new Date();
+  if (t){
+    const h = n.getHours() % 12 || 12;
+    t.textContent = `${h}:${pad2(n.getMinutes())} ${n.getHours() >= 12 ? 'PM' : 'AM'}`;
+  }
+  if (d) d.textContent = `${pad2(n.getDate())}/${pad2(n.getMonth()+1)}/${n.getFullYear()}`;
+}
+
+
+// Keep "Opens in 42 min" on locked rate buttons accurate, and re-render once a meal actually opens.
+function refreshLockedButtons(){
+  const btns = document.querySelectorAll('.rate-btn[data-meal]');
+  if (!btns.length) return;
+  const dateISO = isoOfThisWeek(state.day);
+  // Windows now CLOSE as well as open, so this has to watch both directions: a button
+  // that is live can go dead 12 hours after the meal started, not just the reverse.
+  // Anything that crosses a boundary triggers one re-render rather than being patched
+  // in place, because open and closed buttons differ in more than their text.
+  let needsRerender = false;
+  btns.forEach(btn => {
+    const key = btn.dataset.meal;
+    const open = mealTimeReached(dateISO, key);
+    const looksOpen = !btn.classList.contains('locked') && !btn.classList.contains('rated');
+    if (open !== looksOpen){ needsRerender = true; return; }
+    if (!open && lockReason(dateISO, key) === 'not-yet'){
+      const mins = Math.round((mealOpensAt(dateISO, key).getTime() - Date.now()) / 60000);
+      if (mins > 0) btn.textContent = `Opens in ${formatGap(mins)}`;
+    }
+  });
+  if (needsRerender) renderMain();
+}
+tick(); setInterval(tick, 15000);
+
+document.getElementById('dateline').textContent =
+  now.toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long'}) + " · showing " + todayName;
+
+const DISPLAY_DAYS = DAYS.slice(1).concat(DAYS[0]); // Mon..Sun order for display
+
+/* ---------------- RENDER: DAY TOKENS ---------------- */
+function renderDayRow(){
+  const row = document.getElementById('dayRow');
+  row.innerHTML = "";
+  DISPLAY_DAYS.forEach(day => {
+    // Dates for the current Mon–Sun week. Using each weekday's most recent *past*
+    // occurrence (what the rating flow does internally) made the rail read
+    // "MON 14, TUE today, WED 9" — jumping backwards mid-week.
+    const dd = dateOfThisWeek(day).getDate();
+
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'day' + (day === state.day ? ' sel':'') + (day === todayName ? ' today':'');
+    el.innerHTML = `<span class="dn">${DAY_ABBR[day]}</span>` +
+                   `<span class="dd">${day === todayName ? 'TODAY' : dd}</span>`;
+    el.onclick = () => { haptic(6); state.day = day; renderDayRow(); renderMain(); };
+    el.dataset.day = day;
+    row.appendChild(el);
+  });
+  // Centre the selected day *within the rail* by setting scrollLeft directly.
+  // scrollIntoView would drag the whole page down to reach the rail — which, now that
+  // there's a tall hero above it, meant unlocking dumped you halfway down the page.
+  const sel = row.querySelector('.day.sel');
+  if (sel) row.scrollLeft = sel.offsetLeft - (row.clientWidth - sel.offsetWidth) / 2;
+  syncTodayChip();
+}
+
+/* ---------------- RENDER: MESS TOGGLE ----------------
+   A segmented control whose highlight slides between the two options — the same
+   single-moving-element trick as the navbar pill, rather than fading two backgrounds. */
+// Two copies of the same control now — one on Today, one on Week. They're driven from a
+// single state.mess so they can never disagree; a toggle that only half-moved would be
+// worse than not having one.
+const MESS_SEGS = [
+  { north:'tier-north',  south:'tier-south',  thumb:'segThumb'  },
+  { north:'tier2-north', south:'tier2-south', thumb:'segThumb2' }
+];
+function renderTiers(animate){
+  MESS_SEGS.forEach(ids => {
+    const north = document.getElementById(ids.north);
+    const south = document.getElementById(ids.south);
+    const thumb = document.getElementById(ids.thumb);
+    if (!north || !south || !thumb) return;   // one seg missing must not stop the other
+
+    north.classList.toggle('on', state.mess === 'north');
+    south.classList.toggle('on', state.mess === 'south');
+
+    const target = state.mess === 'north' ? north : south;
+    // A hidden view reports zero width, so measuring it would park the thumb at 0 and
+    // leave it there. Skip it — go() re-renders on the way in, once it's measurable.
+    if (!target.offsetWidth) return;
+    if (animate === false) thumb.style.transition = 'none';
+    thumb.style.width = target.offsetWidth + 'px';
+    thumb.style.transform = `translateX(${target.offsetLeft - 5}px)`;  // 5px = .seg padding
+    if (animate === false) requestAnimationFrame(() => { thumb.style.transition = ''; });
+  });
+}
+// Widths shift once the webfont lands and on resize, so re-measure rather than trusting first paint.
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => renderTiers(false));
+window.addEventListener('resize', () => renderTiers(false));
+function setMess(m){
+  haptic(6);
+  state.mess = m;
+  renderTiers();
+  renderMain();
+  renderToday();   // Today's card follows whichever menu is selected
+  // Remembered across launches — you eat at one mess, so asking every time is a tax.
+  if (window.storage){
+    try{ window.storage.set('menu_pref', m, false); }catch(e){ /* non-fatal */ }
+  }
+}
+async function initMenuPref(){
+  try{
+    if (!window.storage) return;
+    const res = await window.storage.get('menu_pref', false);
+    if (res && (res.value === 'north' || res.value === 'south')) state.mess = res.value;
+  }catch(e){ /* no saved preference yet */ }
+}
+
+/* ---------------- RENDER: MEAL CARDS ---------------- */
+async function renderMain(){
+  const mess = MENU[state.mess];
+  // Never let a bad state.day throw here. renderMain() paints the whole Week view, so an
+  // unrecognised day name would blank the tab rather than degrade.
+  if (!mess.days[state.day]) state.day = todayName;
+  const dayData = mess.days[state.day];
+  const main = document.getElementById('main');
+  main.innerHTML = "";
+
+  const fb = await getFeedback(state.mess, state.day); // {breakfast:[{rating,comment,ts}], ...}
+  // The date on the rail IS the date being rated. No quiet remapping to last week.
+  const mappedDateISO = isoOfThisWeek(state.day);
+  const combos = await getRatedCombos();
+
+  // Which meal of this day rates best so far? Only meaningful once a couple of ratings exist.
+  let bestMeal = null, bestAvg = 0;
+  MEAL_KEYS.forEach(k => {
+    const e = (fb && fb[k]) || [];
+    if (!e.length) return;
+    const avg = e.reduce((s,x)=>s+x.rating,0)/e.length;
+    if (avg > bestAvg){ bestAvg = avg; bestMeal = k; }
+  });
+
+  MEAL_KEYS.forEach(key => {
+    const items = dayData[key];
+    const card = document.createElement('div');
+    card.className = 'meal';
+    card.style.animationDelay = (MEAL_KEYS.indexOf(key) * 60) + 'ms';
+
+    // IMPORTANT: `entries` comes from this device's own storage, not the backend. Until
+    // GET /meal-ratings exists there is no shared data, so every label here has to say
+    // "you". A bare "★ 4.0 · 1" reads as a community score, which is the one thing this
+    // screen must not imply — a student would be looking at their own rating played back
+    // to them and believing it was the hostel's verdict. When the endpoint lands, swap
+    // the source and these labels go back to "what people said".
+    const entries = (fb && fb[key]) || [];
+    let avgHtml = '';
+    if (entries.length){
+      const avg = (entries.reduce((s,e)=>s+e.rating,0)/entries.length).toFixed(1);
+      avgHtml = `<div class="avg mine" title="Your own rating — shared ratings aren't live yet">★ ${avg} <span class="avg-who">you</span></div>`;
+    }
+    // "Best today" compared across YOUR ratings only — same caveat, so it says so.
+    const ratedMealCount = MEAL_KEYS.filter(k => ((fb && fb[k]) || []).length).length;
+    const bestHtml = (key === bestMeal && ratedMealCount > 1 && bestAvg >= 3.5)
+      ? `<span class="best">★ your best today</span>` : '';
+
+    // Your own notes, played back so feedback doesn't vanish into the void once submitted.
+    const withComments = entries.filter(e => e.comment && e.comment.trim())
+                                .sort((a,b) => b.ts - a.ts)
+                                .slice(0, 2);
+    const commentsHtml = withComments.length ? `
+      <div class="says">
+        <div class="sh">What you said</div>
+        ${withComments.map(e => `<div class="sl"><span class="st">${'★'.repeat(e.rating)}</span> ${escapeHtml(e.comment.trim())}</div>`).join('')}
+        <div class="sn">Only you can see this. Ratings from other students aren't live yet.</div>
+      </div>` : '';
+
+    const commonNote = mess.common[key] ? `<div class="note">${mess.common[key]}</div>` : '';
+    // Say what the filter removed rather than removing it silently — otherwise a student
+    // who forgot the filter was on reads the menu as "no egg today".
+    const shownItems = visibleItems(items);
+    const hiddenCount = items.length - shownItems.length;
+    const hiddenNote = hiddenCount
+      ? `<div class="note">${hiddenCount} non-vegetarian item${hiddenCount>1?'s':''} hidden by the veg filter.</div>` : '';
+
+    card.innerHTML = `
+      <div class="meal-top">
+        <div>
+          <div class="meal-name">${mess.mealLabels[key]}${bestHtml}</div>
+          <div class="meal-time">${mess.mealTimes[key]}</div>
+        </div>
+        ${avgHtml}
+      </div>
+      <div class="items">
+        ${shownItems.length
+            ? shownItems.map(it => itemChipHtml(it, state.day, key)).join('')
+            : `<span class="chip">Nothing vegetarian on this meal</span>`}
+      </div>
+      ${hiddenNote}
+      ${commonNote}
+      ${commentsHtml}
+      <button class="rate-btn" data-meal="${key}">Rate this ${mess.mealLabels[key].toLowerCase()}</button>
+    `;
+    const locked = !mealTimeReached(mappedDateISO, key);
+    // Rating combos are now tracked per (hall + menu), but this card only knows the menu
+    // (state.mess) being viewed — so it's "already rated" if any hall was rated for this menu.
+    const alreadyRated = REVIEW_MESSES.some(h => !!combos[comboId(`${h.value}_${state.mess}`, mappedDateISO, key)]);
+    const btn = card.querySelector('.rate-btn');
+    if (locked){
+      btn.disabled = true;
+      const why = lockReason(mappedDateISO, key);
+      if (why === 'future'){
+        // Name the day, not just the clock time — "Opens at 7:30 AM" on a Friday card read
+        // as though it would open this morning.
+        btn.textContent = `Opens ${state.day} ${formatMealStart(key)}`;
+      } else if (why === 'expired'){
+        btn.textContent = `Rating closed`;
+      } else {
+        const mins = Math.round((mealOpensAt(mappedDateISO, key).getTime() - Date.now()) / 60000);
+        btn.textContent = `Opens in ${formatGap(mins)}`;
+      }
+      btn.classList.add('locked');
+    } else if (alreadyRated){
+      btn.disabled = true;
+      btn.textContent = `✓ Already rated`;
+      btn.classList.add('rated');
+    } else {
+      btn.onclick = () => openSheet(key);
+    }
+    main.appendChild(card);
+  });
+}
+
+/* ---------------- STORAGE ---------------- */
+function fbKey(mess, day){ return `feedback_${mess}_${day}`; }
+
+/* ---------------- RATING INTEGRITY (one rating per meal instance, per device) ---------------- */
+/* ================= WHO IS RATING ================= */
+/* Ratings are now tied to a student, not a browser. The roll number is entered once,
+   kept on the device, and attached to every submission.
+   Storage note: this is the only personal data the app holds. It stays in this device's
+   own storage and goes to the mess committee's backend with each submission; it is not
+   shared with anyone else and "Change" lets them clear it. */
+let identity = null;   // { name, roll }
+
+async function loadIdentity(){
+  try{
+    if (!window.storage) return;
+    const res = await window.storage.get('student_identity', false);
+    if (res && res.value){
+      const p = JSON.parse(res.value);
+      if (p && p.name && p.roll) identity = { name: String(p.name), roll: String(p.roll) };
+    }
+  }catch(e){ identity = null; }
+}
+async function saveIdentity(name, roll){
+  identity = { name: name.trim(), roll: roll.trim().toUpperCase() };
+  try{
+    if (window.storage) await window.storage.set('student_identity', JSON.stringify(identity), false);
+  }catch(e){ /* non-fatal — it just gets asked again next time */ }
+}
+
+/* The once-per-meal lock keys on the ROLL NUMBER, not the device.
+   Keying on the device was wrong in both directions: two roommates sharing a phone got
+   one rating between them, and the same person on a laptop and a phone got two. Keying
+   on the roll number fixes both.
+   HONEST LIMIT: nothing here stops someone typing a classmate's roll number, or their
+   own with a digit changed. This is a client-side check on data the client supplies, so
+   it prevents mistakes, not determined abuse. The unique constraint that actually holds
+   is (roll, mess, date, meal) on the backend — see the project notes. */
+function comboId(mess, dateISO, meal){
+  const who = (identity && identity.roll) ? identity.roll : 'anon';
+  return `${who}_${mess}_${dateISO}_${meal}`;
+}
+async function getRatedCombos(){
+  try{
+    if (!window.storage) return {};
+    const res = await window.storage.get('rated_combos', false);
+    return res && res.value ? JSON.parse(res.value) : {};
+  }catch(e){
+    return {};
+  }
+}
+async function markRated(mess, dateISO, meal){
+  if (!window.storage) return;
+  try{
+    const combos = await getRatedCombos();
+    combos[comboId(mess, dateISO, meal)] = Date.now();
+    await window.storage.set('rated_combos', JSON.stringify(combos), false);
+  }catch(e){ /* non-fatal — the rating itself already went through */ }
+}
+
+
+async function getFeedback(mess, day){
+  const cacheKey = mess + "_" + day;
+  if (state.feedbackCache[cacheKey]) return state.feedbackCache[cacheKey];
+  try{
+    const res = await window.storage.get(fbKey(mess, day), true);
+    const val = res && res.value ? JSON.parse(res.value) : {};
+    state.feedbackCache[cacheKey] = val;
+    return val;
+  }catch(e){
+    state.feedbackCache[cacheKey] = {};
+    return {};
+  }
+}
+
+async function saveFeedback(mess, day, meal, rating, comment){
+  const key = fbKey(mess, day);
+  let current = {};
+  try{
+    const res = await window.storage.get(key, true);
+    current = res && res.value ? JSON.parse(res.value) : {};
+  }catch(e){ current = {}; }
+  if (!current[meal]) current[meal] = [];
+  current[meal].push({ rating, comment: comment || "", ts: Date.now() });
+  await window.storage.set(key, JSON.stringify(current), true);
+  state.feedbackCache[mess + "_" + day] = current;
+}
+
+/* ---------------- FEEDBACK SHEET ---------------- */
+function populateSheetSelects(presetMeal){
+  const fHall = document.getElementById('fHall');
+  const fMenu = document.getElementById('fMenu');
+  const fDay = document.getElementById('fDay');
+
+  fHall.innerHTML = REVIEW_MESSES.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+  fHall.value = REVIEW_MESSES[0].value; // no natural default hall
+
+  fMenu.innerHTML = MENUS.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+  fMenu.value = state.mess; // default to whichever menu (north/south) is currently on screen
+
+  // The picker itself refuses anything outside the rateable range, so a date that can't
+  // be scored is never even offered.
+  fDay.max = todayISO();
+  fDay.min = earliestRatableISO();
+  // Default to the day being viewed — but if that day hasn't happened yet, today is the
+  // furthest forward anyone can go.
+  const viewedISO = isoOfThisWeek(state.day);
+  fDay.value = (viewedISO > fDay.max) ? fDay.max : viewedISO;
+
+  refreshMealOptions(presetMeal);
+  fHall.onchange = () => refreshMealOptions();
+  fMenu.onchange = () => refreshMealOptions();
+  fDay.onchange = () => {
+    // Belt and braces: `min`/`max` are advisory on some mobile pickers and can be typed past.
+    if (fDay.value > fDay.max) fDay.value = fDay.max;
+    if (fDay.value < fDay.min) fDay.value = fDay.min;
+    refreshMealOptions();
+  };
+}
+async function refreshMealOptions(presetMeal){
+  const fHall = document.getElementById('fHall');
+  const fMenu = document.getElementById('fMenu');
+  const fDay = document.getElementById('fDay');
+  const fMeal = document.getElementById('fMeal');
+  const lockNote = document.getElementById('lockNote');
+  const labels = GENERIC_MEAL_LABELS;
+  const dateISO = fDay.value || todayISO();
+  const comboMess = `${fHall.value}_${fMenu.value}`; // hall + menu together identify what's being rated
+
+  const timeOk = MEAL_KEYS.map(k => mealTimeReached(dateISO, k));
+
+  // Before breakfast opens on today's date there's nothing yet to rate — fall back a day.
+  if (dateISO === todayISO() && timeOk.every(a => !a)){
+    const d = new Date(dateISO); d.setDate(d.getDate() - 1);
+    fDay.value = toISODate(d);
+    return refreshMealOptions(presetMeal);
+  }
+
+  const combos = await getRatedCombos();
+  const rated = MEAL_KEYS.map(k => !!combos[comboId(comboMess, dateISO, k)]);
+  const available = MEAL_KEYS.map((k,i) => timeOk[i] && !rated[i]);
+
+  fMeal.innerHTML = MEAL_KEYS.map((k,i) => {
+    let text = labels[k];
+    if (!timeOk[i]){
+      const why = lockReason(dateISO, k);
+      text += why === 'future' ? ` (not served yet)`
+            : why === 'expired' ? ` (rating closed)`
+            : ` (opens ${formatMealStart(k)})`;
+    }
+    else if (rated[i]) text += ` (already rated ✓)`;
+    return `<option value="${k}" ${available[i] ? '' : 'disabled'}>${text}</option>`;
+  }).join('');
+
+  const presetIdx = presetMeal ? MEAL_KEYS.indexOf(presetMeal) : -1;
+  if (presetIdx !== -1 && available[presetIdx]){
+    fMeal.value = presetMeal;
+  } else {
+    // pick the latest meal that's still open and not yet rated
+    for (let i = MEAL_KEYS.length - 1; i >= 0; i--){
+      if (available[i]){ fMeal.value = MEAL_KEYS[i]; break; }
+    }
+  }
+
+  const openMeal = MEAL_KEYS.find(k => mealTimeReached(dateISO, k));
+  lockNote.textContent = openMeal
+    ? `Closes ${formatGap(ratingTimeLeft(dateISO, openMeal))} from now. One rating per person per meal.`
+    : `Rating opens when a meal starts and closes ${RATING_WINDOW_HOURS} hours later.`;
+
+  // Keep the collapsed summary in step with whatever the pickers now hold.
+  renderRateCtx();
+}
+/* A radio group, not five decorative spans.
+   These used to be <span>s with an onclick: no tab stop, no role, no state announced.
+   A keyboard or screen-reader user could open the sheet, fill in the comment, and have
+   no way whatsoever to set a score — the one thing the sheet exists for.
+   Now: real <button>s in role="radiogroup", arrow keys and Home/End move the choice,
+   and only the selected star stays in the tab order (roving tabindex), so Tab doesn't
+   have to be pressed five times to get past the control. */
+const STAR_WORDS = ['', 'Bad', 'Poor', 'Fine', 'Good', 'Great'];
+function setStars(n, focus){
+  state.sheetStars = Math.min(5, Math.max(1, n));
+  renderStars();
+  // The hint doubles as confirmation — on a phone your thumb covers the star you just
+  // tapped, so "Good" appearing below it is how you know which one registered.
+  const hint = document.getElementById('starHint');
+  if (hint){
+    hint.textContent = STAR_WORDS[state.sheetStars] || 'Tap to rate';
+    hint.classList.toggle('set', state.sheetStars > 0);
+  }
+  if (focus){
+    const el = document.querySelector(`#starsRow .star[data-v="${state.sheetStars}"]`);
+    if (el) el.focus();
+  }
+}
+function renderStars(){
+  const row = document.getElementById('starsRow');
+  if (!row) return;
+  row.setAttribute('role', 'radiogroup');
+  row.setAttribute('aria-label', 'Rating out of 5');
+  row.innerHTML = "";
+  for(let i=1;i<=5;i++){
+    const s = document.createElement('button');
+    s.type = 'button';
+    s.className = 'star' + (i <= state.sheetStars ? ' on':'');
+    s.textContent = '★';
+    s.dataset.v = i;
+    s.setAttribute('role', 'radio');
+    s.setAttribute('aria-checked', String(i === state.sheetStars));
+    s.setAttribute('aria-label', `${i} star${i>1?'s':''}`);
+    // Roving tabindex: the chosen star (or the first, before anything is chosen) is the
+    // single tab stop for the whole group.
+    s.tabIndex = (i === (state.sheetStars || 1)) ? 0 : -1;
+    s.onclick = () => { haptic(8); setStars(i); };
+    s.onkeydown = (e) => {
+      const k = e.key;
+      // Move relative to the FOCUSED star, not to state. They're the same once anything
+      // is chosen, but on a fresh sheet the score is 0 while focus sits on star 1 —
+      // arrowing right from there has to give 2, not 1.
+      if (k === 'ArrowRight' || k === 'ArrowUp')        { e.preventDefault(); setStars(i + 1, true); }
+      else if (k === 'ArrowLeft' || k === 'ArrowDown')  { e.preventDefault(); setStars(i - 1, true); }
+      else if (k === 'Home')                            { e.preventDefault(); setStars(1, true); }
+      else if (k === 'End')                             { e.preventDefault(); setStars(5, true); }
+      else if (k === ' ' || k === 'Enter')              { e.preventDefault(); setStars(i, true); }
+    };
+    row.appendChild(s);
+  }
+}
+
+/* ---------------- SHEET LOADING OVERLAY ---------------- */
+/* The messages move because the wait is genuinely long: Render's free tier sleeps, so
+   the first submission after a quiet period takes 30-60 seconds. Static text for a
+   minute reads as a hang. The last two lines say WHY it's slow rather than pretending
+   it isn't — that's the difference between waiting and giving up. */
+const LOADING_STEPS = [
+  { at: 0,     text: 'Sending it over…',        sub: '' },
+  { at: 2600,  text: 'Still sending…',          sub: '' },
+  { at: 6000,  text: 'Waking the server up',    sub: 'It sleeps when nobody has used it for a while. First send of the day takes the longest.' },
+  { at: 14000, text: 'Nearly there',            sub: 'This can take up to a minute on a cold start. Your feedback is safe — don\'t close this.' },
+  { at: 30000, text: 'Hanging on…',             sub: 'Taking longer than usual. If it fails, nothing is lost — you can send it again.' }
+];
+const loadingTimers = {};
+function showSheetLoading(id, show){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('show', !!show);
+
+  (loadingTimers[id] || []).forEach(clearTimeout);
+  loadingTimers[id] = [];
+  if (!show) return;
+
+  const t = document.getElementById(id + 'Text');
+  const s = document.getElementById(id + 'Sub');
+  LOADING_STEPS.forEach(step => {
+    loadingTimers[id].push(setTimeout(() => {
+      if (t) t.textContent = step.text;
+      if (s) s.textContent = step.sub;
+    }, step.at));
+  });
+}
+// Keeps the loading overlay visible for at least `minMs`, even if the request settles
+// almost instantly — otherwise a fast (or fast-failing) request can make it flash by unnoticed.
+async function withMinLoadingTime(promise, minMs){
+  const start = Date.now();
+  try{
+    const result = await promise;
+    const remaining = minMs - (Date.now() - start);
+    if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
+    return result;
+  }catch(err){
+    const remaining = minMs - (Date.now() - start);
+    if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
+    throw err;
+  }
+}
+
+/* ---------------- Identity gate ----------------
+   Anything that submits goes through requireIdentity(fn): it runs fn straight away if we
+   already know who this is, and otherwise collects a name and roll number first and then
+   runs fn. The pending action is held here rather than the caller re-checking, so there's
+   exactly one place that decides whether the gate is needed. */
+let pendingAfterIdentity = null;
+
+function requireIdentity(next){
+  if (identity && identity.name && identity.roll){ next(); return; }
+  pendingAfterIdentity = next;
+  openIdentity();
+}
+/* Roll numbers are MNXABC: two digits, one letter, three digits. Six characters, no
+   spaces, no hyphens. */
+const ROLL_PATTERN = /^[0-9]{2}[A-Z][0-9]{3}$/;
+const ROLL_EXAMPLE = '24Z201';
+
+/* Uppercased as you type, not just on save and not just visually.
+   CSS `text-transform:uppercase` only changes how the value LOOKS — the value itself
+   stays whatever was typed, so "24z201" would be what the field reports while the screen
+   showed "24Z201". Since the roll number is the key the once-per-person rule uses, that
+   mismatch would let the same student rate twice by typing it in a different case once.
+   Also strips anything that can't be in a roll number — a stray space from autocorrect,
+   or the hyphen people add out of habit. */
+function formatRollInput(el){
+  const caret = el.selectionStart;
+  const before = el.value;
+  const cleaned = before.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  if (cleaned !== before){
+    el.value = cleaned;
+    // Keep the caret where it was, allowing for characters the clean-up removed.
+    const shift = before.length - cleaned.length;
+    const pos = Math.max(0, Math.min(cleaned.length, caret - shift));
+    try{ el.setSelectionRange(pos, pos); }catch(e){ /* not all inputs support it */ }
+  }
+  // Green tick once it matches, so a phone user knows before reaching for Continue.
+  const field = document.getElementById('idRollField');
+  if (field) field.classList.toggle('ok', ROLL_PATTERN.test(el.value));
+  clearIdentityError();
+}
+
+function clearIdentityError(){
+  const err = document.getElementById('idError');
+  if (err) err.textContent = '';
+  ['idNameField','idRollField'].forEach(id => document.getElementById(id)?.classList.remove('bad'));
+}
+function showIdentityError(msg, fieldId){
+  const err = document.getElementById('idError');
+  if (err) err.textContent = msg;
+  clearIdentityErrorMarks();
+  const f = document.getElementById(fieldId);
+  if (f){
+    f.classList.add('bad');
+    f.querySelector('input')?.focus();
+  }
+  haptic(14);
+}
+function clearIdentityErrorMarks(){
+  ['idNameField','idRollField'].forEach(id => document.getElementById(id)?.classList.remove('bad'));
+}
+function openIdentity(){
+  clearIdentityError();
+  const n = document.getElementById('idName');
+  const r = document.getElementById('idRoll');
+  if (n) n.value = identity ? identity.name : '';
+  if (r) r.value = identity ? identity.roll : '';
+  // Reopening with a roll number already saved should show it as valid, not neutral.
+  const rf = document.getElementById('idRollField');
+  if (rf) rf.classList.toggle('ok', !!(r && ROLL_PATTERN.test(r.value)));
+  // Changing a saved name is a different errand from setting one up; say which.
+  const t = document.getElementById('idTitle');
+  if (t) t.textContent = identity ? 'Your details' : "Who's rating?";
+  document.getElementById('idBackdrop').classList.add('show');
+  document.getElementById('idSheet').classList.add('show');
+  // Focus the first EMPTY field — re-opening to fix a typo in the roll number shouldn't
+  // put the cursor back in a name that's already correct.
+  setTimeout(() => {
+    const target = (n && !n.value) ? n : (r && !r.value) ? r : n;
+    target?.focus();
+  }, 280);
+}
+function closeIdentity(){
+  document.getElementById('idBackdrop').classList.remove('show');
+  document.getElementById('idSheet').classList.remove('show');
+  pendingAfterIdentity = null;   // backing out cancels whatever it was gating
+}
+async function submitIdentity(){
+  const name = (document.getElementById('idName').value || '').trim();
+  const roll = (document.getElementById('idRoll').value || '').trim().toUpperCase();
+  if (name.length < 2){ showIdentityError('Please enter your name.', 'idNameField'); return; }
+  if (!roll){ showIdentityError('Please enter your roll number.', 'idRollField'); return; }
+  // Now checked against the real shape rather than "4 to 15 characters".
+  // Worth being strict here specifically because the roll number is the key the
+  // once-per-person rule hangs off: "24z201", "24Z201 " and "24Z2O1" (letter O for zero)
+  // would each count as a different student and quietly hand someone a second rating.
+  if (!ROLL_PATTERN.test(roll)){
+    showIdentityError(`Roll numbers look like ${ROLL_EXAMPLE} — two digits, a letter, then three digits.`, 'idRollField');
+    return;
+  }
+  haptic(8);
+  await saveIdentity(name, roll);
+  renderWhoami();
+  document.getElementById('idBackdrop').classList.remove('show');
+  document.getElementById('idSheet').classList.remove('show');
+  const next = pendingAfterIdentity;
+  pendingAfterIdentity = null;
+  if (next) setTimeout(next, 220);   // let the sheet finish sliding out first
+}
+function changeIdentity(){ haptic(6); openIdentity(); }
+
+/* The whole bar is the button, not just the word "Change".
+   It sits at the top of both sheets, so making the entire row the target means the
+   edit is impossible to miss without adding a screen in front of every rating. The
+   inner "Change" stays as the visible affordance — it says what tapping does. */
+function renderWhoami(){
+  const inner = identity
+    ? `<span>Submitting as <b>${escapeHtml(identity.name)}</b> · ${escapeHtml(identity.roll)}</span>
+       <span class="whoami-cta">Change</span>` : '';
+  ['rateWhoami','complaintWhoami'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = inner;
+    el.hidden = !identity;
+  });
+}
+
+/* The one-line summary of what's about to be rated, built from whatever the (correct)
+   pickers hold. Re-rendered whenever one of them changes, so expanding, editing and
+   collapsing leaves the line telling the truth. */
+function renderRateCtx(){
+  const hall = document.getElementById('fHall');
+  const menu = document.getElementById('fMenu');
+  const day  = document.getElementById('fDay');
+  const meal = document.getElementById('fMeal');
+  const main = document.getElementById('ctxMain');
+  const sub  = document.getElementById('ctxSub');
+  if (!hall || !main) return;
+
+  const mealLabel = MEAL_LABELS[meal.value] || meal.value || '—';
+  const hallLabel = (REVIEW_MESSES.find(m => m.value === hall.value) || {}).label || hall.value;
+  const menuLabel = (MENUS.find(m => m.value === menu.value) || {}).label || menu.value;
+
+  // "today" and "yesterday" rather than a date: inside a 12-hour window those are the
+  // only two answers, and they read faster than 18/09/2026.
+  let when = day.value;
+  const t = todayISO();
+  const y = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return toISODate(d); })();
+  if (day.value === t) when = 'today';
+  else if (day.value === y) when = 'yesterday';
+  else if (day.value) when = weekdayOfISO(day.value);
+
+  main.textContent = `${mealLabel} · ${when}`;
+  sub.textContent  = `${hallLabel} · ${menuLabel}`;
+}
+function toggleRateFields(){
+  haptic(6);
+  const fields = document.getElementById('rateFields');
+  const ctx    = document.getElementById('rateCtx');
+  const open   = fields.hidden;
+  fields.hidden = !open;
+  ctx.classList.toggle('open', open);
+  ctx.setAttribute('aria-expanded', String(open));
+  document.getElementById('ctxCta').textContent = open ? 'Done' : 'Change';
+}
+
+function openSheet(meal){
+  requireIdentity(() => {
+    state.sheetStars = 0;
+    showSheetLoading('feedbackLoading', false);
+    populateSheetSelects(meal);
+    renderStars();
+    renderWhoami();
+    // Always start collapsed — the whole point is that the defaults are right.
+    const fields = document.getElementById('rateFields');
+    const ctx = document.getElementById('rateCtx');
+    if (fields) fields.hidden = true;
+    if (ctx){ ctx.classList.remove('open'); ctx.setAttribute('aria-expanded','false'); }
+    const cta = document.getElementById('ctxCta');
+    if (cta) cta.textContent = 'Change';
+    renderRateCtx();
+    const hint = document.getElementById('starHint');
+    if (hint){ hint.textContent = 'Tap to rate'; hint.classList.remove('set'); }
+    document.getElementById('fComment').value = "";
+    document.getElementById('backdrop').classList.add('show');
+    document.getElementById('sheet').classList.add('show');
+  });
+}
+function closeSheet(){
+  document.getElementById('backdrop').classList.remove('show');
+  document.getElementById('sheet').classList.remove('show');
+}
+
+/* ---------------- One meal, expanded ----------------
+   "Rest of today" used to link to the Week tab, which threw away the thing you'd just
+   told it — you tapped Dinner and got the whole week to scroll through again. This opens
+   that one meal, in full, where you tapped. */
+let mealSheetCtx = null;
+function openMealSheet(mealKey, dayName){
+  const day  = dayName || todayName;
+  const mess = MENU[state.mess];
+  const list = (mess.days[day] && mess.days[day][mealKey]) || [];
+  if (!list.length) return;
+  haptic(6);
+  mealSheetCtx = { meal: mealKey, day };
+
+  document.getElementById('mealSheetTitle').textContent = MEAL_LABELS[mealKey];
+  document.getElementById('mealSheetTime').textContent  =
+    `${mess.mealTimes[mealKey]} · ${mess.label}${day === todayName ? '' : ' · ' + day}`;
+
+  const shown = visibleItems(list);
+  const hidden = list.length - shown.length;
+  document.getElementById('mealSheetItems').innerHTML =
+    shown.map(it => itemChipHtml(it, day, mealKey)).join('') ||
+    `<span class="chip">Nothing vegetarian on this meal</span>`;
+
+  const note = document.getElementById('mealSheetNote');
+  const parts = [];
+  if (mess.common[mealKey]) parts.push(mess.common[mealKey]);
+  if (hidden) parts.push(`${hidden} non-vegetarian item${hidden>1?'s':''} hidden by the veg filter.`);
+  note.innerHTML = parts.join('<br>');
+  note.hidden = !parts.length;
+
+  const dateISO = isoOfThisWeek(day);
+  const btn = document.getElementById('mealSheetRate');
+  btn.className = 'rate-btn';
+  btn.disabled = false;
+  btn.onclick = null;
+  getRatedCombos().then(combos => {
+    const already = REVIEW_MESSES.some(h => !!combos[comboId(`${h.value}_${state.mess}`, dateISO, mealKey)]);
+    if (!mealTimeReached(dateISO, mealKey)){
+      const why = lockReason(dateISO, mealKey);
+      btn.disabled = true; btn.classList.add('locked');
+      btn.textContent = why === 'expired' ? 'Rating closed'
+                      : why === 'future'  ? `Opens ${day} ${formatMealStart(mealKey)}`
+                      : `Opens in ${formatGap(Math.round((mealOpensAt(dateISO,mealKey).getTime()-Date.now())/60000))}`;
+    } else if (already){
+      btn.disabled = true; btn.classList.add('rated'); btn.textContent = '✓ Already rated';
+    } else {
+      btn.textContent = `Rate this ${MEAL_LABELS[mealKey].toLowerCase()}`;
+      btn.onclick = () => { closeMealSheet(); setTimeout(() => openSheet(mealKey), 220); };
+    }
+  });
+
+  document.getElementById('mealBackdrop').classList.add('show');
+  document.getElementById('mealSheet').classList.add('show');
+}
+function closeMealSheet(){
+  document.getElementById('mealBackdrop').classList.remove('show');
+  document.getElementById('mealSheet').classList.remove('show');
+  mealSheetCtx = null;
+}
+
+// One place to update once the backend is deployed — everything else derives from this.
+const API_BASE = "https://mess-backend-oj2n.onrender.com";
+const RATE_SUBMIT_URL = `${API_BASE}/rate-submit`;
+const COMPLAINT_SUBMIT_URL = `${API_BASE}/complaint-submit`;
+
+// No login system exists yet, so each device gets a persistent anonymous numeric id
+// the first time it submits a rating. Swap this out once real student accounts exist.
+async function getDeviceUserId(){
+  if (state.deviceUserId) return state.deviceUserId;
+  try{
+    if (window.storage){
+      try{
+        const res = await window.storage.get('device_user_id', false);
+        if (res && res.value){ state.deviceUserId = res.value; return state.deviceUserId; }
+      }catch(e){ /* not set yet */ }
+      const fresh = String(Math.floor(100000 + Math.random()*900000));
+      await window.storage.set('device_user_id', fresh, false);
+      state.deviceUserId = fresh;
+      return fresh;
+    }
+  }catch(e){ /* storage unavailable */ }
+  state.deviceUserId = String(Math.floor(100000 + Math.random()*900000));
+  return state.deviceUserId;
+}
+
+// `mess` here is the physical hall (g/ab/cd) — kept under the same field name the backend
+// already expects. `menu` (north/south) is a new field; if the backend validates its payload
+// strictly, it'll need updating to accept it.
+// NOTE FOR THE BACKEND: `roll` and `name` are new fields, sent with every submission.
+// `roll` is what makes the once-per-meal rule enforceable server-side — a unique index on
+// (roll, mess, menu, day, meal) is the only version of that rule that actually holds,
+// since everything the client checks is checkable only against data the client supplied.
+async function postToLocalServer(userId, rating, comment, mess, menu, day, meal){
+  const res = await fetch(RATE_SUBMIT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: userId, score: String(rating), comment: comment || "", mess, menu, day, meal,
+      roll: identity ? identity.roll : "", name: identity ? identity.name : ""
+    })
+  });
+  if (!res.ok) throw new Error("Server responded with " + res.status);
+}
+
+async function postComplaintToServer(mess, comment, photoDataUrl, ref){
+  const res = await fetch(COMPLAINT_SUBMIT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mess, comment, photo: photoDataUrl || null, ref,
+      roll: identity ? identity.roll : "", name: identity ? identity.name : ""
+    })
+  });
+  if (!res.ok) throw new Error("Server responded with " + res.status);
+}
+
+/* ---------------- COMPLAINT STATUS (mess committee → student) ----------------
+   Expects an endpoint the committee's tooling updates:
+
+     GET  {API_BASE}/complaint-status?refs=PSG-AAA-1,PSG-BBB-2
+     ->   { "PSG-AAA-1": { "status": "reviewing", "note": "Warden informed" },
+            "PSG-BBB-2": { "status": "resolved",  "note": "New batch of rice from Monday" } }
+
+   status is one of: submitted | reviewing | resolved. `note` is optional free text.
+   Until that endpoint exists this fails quietly and every complaint just reads "Submitted". */
+const COMPLAINT_STATUS_URL = `${API_BASE}/complaint-status`;
+// Glyphs as well as colour, so the three states are still distinguishable at 9.5px
+// and for anyone who can't separate the amber from the green.
+const STATUS_LABELS = { submitted:'○ Submitted', reviewing:'◐ Being looked at', resolved:'✓ Resolved' };
+
+async function fetchComplaintStatuses(refs){
+  if (!refs.length) return {};
+  try{
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);   // never hang the sheet on a sleeping server
+    const res = await fetch(`${COMPLAINT_STATUS_URL}?refs=${encodeURIComponent(refs.join(','))}`, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return {};
+    const data = await res.json();
+    return (data && typeof data === 'object') ? data : {};
+  }catch(e){
+    return {};  // endpoint not built yet, offline, or slow — fall back to the locally stored status
+  }
+}
+
+async function submitFeedback(){
+  const hall = document.getElementById('fHall').value;
+  const menu = document.getElementById('fMenu').value;
+  const mess = `${hall}_${menu}`; // composite key, used only for local "already rated" tracking
+  const dateISO = document.getElementById('fDay').value;
+  const day = weekdayOfISO(dateISO);
+  const meal = document.getElementById('fMeal').value;
+  const comment = document.getElementById('fComment').value.trim();
+  const rating = state.sheetStars;
+
+  if (rating === 0){
+    showToast("Pick at least 1 star, or tap ✕ to skip.");
+    return;
+  }
+
+  // Last line of defence. The picker, the option list and the card buttons all block
+  // un-served meals, but the sheet can sit open across a date change or a disabled
+  // <option> can be forced, and a rating for food nobody has eaten is worse than no rating.
+  if (!mealTimeReached(dateISO, meal)){
+    const why = lockReason(dateISO, meal);
+    showToast(why === 'future' ? "That meal hasn't been served yet."
+            : why === 'expired' ? "That meal is too old to rate now."
+            : "That meal hasn't started yet.");
+    return;
+  }
+
+  const combos = await getRatedCombos();
+  if (combos[comboId(mess, dateISO, meal)]){
+    showToast("You've already rated this meal — thanks!");
+    closeSheet();
+    return;
+  }
+
+  showSheetLoading('feedbackLoading', true);
+
+  // Primary action: send to the local rating server. This must succeed for the submit to count.
+  try{
+    const userId = await getDeviceUserId();
+    await withMinLoadingTime(postToLocalServer(userId, rating, comment, hall, menu, day, meal), 500);
+  }catch(e){
+    showSheetLoading('feedbackLoading', false);
+    showToast("Couldn't reach the server — try again.");
+    return;
+  }
+
+  await markRated(mess, dateISO, meal);
+
+  // Secondary: also cache it in the app's own storage for the on-screen star averages.
+  // Keyed by menu (north/south), matching how the home-screen average badge looks it up.
+  // This is best-effort — if it's unavailable (e.g. viewing the file outside claude.ai), skip it silently.
+  if (window.storage){
+    try{ await saveFeedback(menu, day, meal, rating, comment); }
+    catch(e){ /* non-fatal */ }
+  }
+  addMySubmission({ type:'rating', hall, menu, day, meal, rating, comment, ts: Date.now() });
+
+  showSheetLoading('feedbackLoading', false);
+  haptic(12);
+  showToast("Thanks — feedback saved!");
+  closeSheet();
+  if (menu === state.mess && day === state.day) renderMain();
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- TODAY SHORTCUT ---------------- */
+// Both hero and navbar CTAs route through here, so "today's menu" really does land on today
+// even if you'd been browsing Thursday. The href="#menu" handles the scroll itself.
+function jumpToday(){
+  haptic(8);
+  if (state.day !== todayName){
+    state.day = todayName;
+    renderDayRow();   // also re-centres the rail on today
+    renderMain();
+  }
+}
+// Dim the chip when it would do nothing, so it reads as "you are here" rather than a
+// button that ignored you.
+function syncTodayChip(){
+  const c = document.getElementById('todayChip');
+  if (c) c.classList.toggle('here', state.day === todayName);
+}
+
+/* ---------------- SWIPE BETWEEN DAYS ---------------- */
+(function setupSwipe(){
+  const main = document.getElementById('main');
+  let sx = 0, sy = 0;
+  main.addEventListener('touchstart', e => {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, {passive:true});
+  main.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      const idx = DISPLAY_DAYS.indexOf(state.day);
+      state.day = dx < 0 ? DISPLAY_DAYS[(idx + 1) % 7] : DISPLAY_DAYS[(idx + 6) % 7];
+      haptic(8);
+      renderDayRow();
+      renderMain();
+      retireSwipeHint();   // they know; stop saying it
+    }
+  }, {passive:true});
+})();
+
+/* The day rail lives in the top third of the screen — the hardest place for a thumb to
+   reach one-handed — and swiping the cards has always changed the day. Nothing said so.
+   The hint shows until it's used once, then never again. */
+function retireSwipeHint(){
+  const h = document.getElementById('swipeHint');
+  if (h && !h.hidden){
+    h.hidden = true;
+    try{ if (window.storage) window.storage.set('swipe_hint_seen', '1', false); }catch(e){}
+  }
+}
+async function initSwipeHint(){
+  const h = document.getElementById('swipeHint');
+  if (!h) return;
+  let seen = false;
+  try{
+    if (window.storage){
+      const r = await window.storage.get('swipe_hint_seen', false);
+      seen = !!(r && r.value);
+    }
+  }catch(e){ /* storage blocked — showing it again is harmless */ }
+  // Touch devices only: on a laptop it would be advice you can't take.
+  h.hidden = seen || !('ontouchstart' in window || navigator.maxTouchPoints > 0);
+}
+
+/* ---------------- KEEP FOCUS INSIDE AN OPEN SHEET ----------------
+   With a sheet open, 23 controls behind it were still in the tab order: the tab bar, the
+   day rail, every meal card's rate button. A keyboard or screen-reader user could tab
+   straight out of the dialog into a page they cannot see, and carry on pressing things.
+
+   `inert` is the one-line version of a focus trap — it removes a subtree from the tab
+   order, from the accessibility tree and from pointer events in one go. Called from a
+   single observer rather than from each open/close function, so a sheet added later gets
+   this for free instead of being forgotten. */
+(function guardSheetFocus(){
+  const shell = ['topbar','tabbar'].map(id => document.getElementById(id))
+                  .concat([document.querySelector('main')]).filter(Boolean);
+  const sheets = [...document.querySelectorAll('.sheet')];
+  if (!sheets.length) return;
+
+  function sync(){
+    const open = sheets.some(s => s.classList.contains('show'));
+    shell.forEach(el => {
+      // Never make a sheet's own ancestor inert — that would disable the sheet too.
+      if (sheets.some(s => el.contains(s))) return;
+      el.inert = open;
+    });
+    document.body.classList.toggle('sheet-open', open);
+  }
+  const mo = new MutationObserver(sync);
+  sheets.forEach(s => mo.observe(s, { attributes:true, attributeFilter:['class'] }));
+  sync();
+})();
+
+/* ---------------- SWIPE A SHEET DOWN TO CLOSE ----------------
+   The grab handle at the top of every sheet looked draggable and wasn't. On a phone the
+   ✕ is in the top-right corner — the single hardest pixel to reach with a thumb — so the
+   gesture everyone already expects from a bottom sheet was the one thing missing.
+
+   Only starts when the sheet is scrolled to the very top, otherwise dragging down to
+   scroll the sheet's own content would dismiss it instead. */
+(function setupSheetDismiss(){
+  const sheets = [
+    { id:'sheet',          close:closeSheet },
+    { id:'complaintSheet', close:closeComplaintSheet },
+    { id:'idSheet',        close:closeIdentity },
+    { id:'mealSheet',      close:closeMealSheet },
+    { id:'mySubSheet',     close:closeMySubmissions }
+  ];
+  sheets.forEach(({id, close}) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let startY = 0, dy = 0, dragging = false;
+
+    el.addEventListener('touchstart', e => {
+      if (el.scrollTop > 0) { dragging = false; return; }
+      // Not from inside a text field — dragging to place the caret isn't a dismiss.
+      if (e.target.closest('input,textarea,select')) { dragging = false; return; }
+      startY = e.touches[0].clientY; dy = 0; dragging = true;
+      el.style.transition = 'none';
+    }, {passive:true});
+
+    el.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      dy = e.touches[0].clientY - startY;
+      if (dy < 0) { dy = 0; return; }              // upward does nothing
+      el.style.transform = `translate(-50%, ${dy}px)`;
+    }, {passive:true});
+
+    el.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      el.style.transition = '';
+      el.style.transform = '';
+      // A quarter of the sheet, or 110px, whichever is smaller — a tall sheet shouldn't
+      // need a longer drag than a short one.
+      if (dy > Math.min(110, el.offsetHeight * 0.25)){ haptic(8); close(); }
+    }, {passive:true});
+  });
+})();
+
+/* ---------------- COMPLAINT SHEET ---------------- */
+let complaintPhotoData = null; // compressed base64 jpeg, or null
+
+function openComplaintSheet(){
+  requireIdentity(() => {
+    document.getElementById('cMess').value = REVIEW_MESSES[0].value;
+    document.getElementById('cComment').value = "";
+    document.getElementById('photoInput').value = "";
+    complaintPhotoData = null;
+    updatePhotoPreview();
+    renderWhoami();
+    showSheetLoading('complaintLoading', false);
+    document.getElementById('complaintBackdrop').classList.add('show');
+    document.getElementById('complaintSheet').classList.add('show');
+  });
+}
+function closeComplaintSheet(){
+  document.getElementById('complaintBackdrop').classList.remove('show');
+  document.getElementById('complaintSheet').classList.remove('show');
+}
+function updatePhotoPreview(){
+  const img = document.getElementById('photoPreview');
+  const rm = document.getElementById('photoRemoveBtn');
+  if (complaintPhotoData){
+    img.src = complaintPhotoData;
+    img.style.display = 'block';
+    rm.style.display = 'inline';
+  }else{
+    img.style.display = 'none';
+    rm.style.display = 'none';
+  }
+}
+function removePhoto(){
+  complaintPhotoData = null;
+  document.getElementById('photoInput').value = "";
+  updatePhotoPreview();
+}
+// Downscale + JPEG-compress before storing, so a full-res phone photo doesn't blow past storage limits.
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 900;
+        let { width, height } = img;
+        if (width > height && width > maxDim){ height = Math.round(height * maxDim / width); width = maxDim; }
+        else if (height > maxDim){ width = Math.round(width * maxDim / height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function handlePhotoSelect(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  try{
+    complaintPhotoData = await compressImage(file);
+    updatePhotoPreview();
+  }catch(err){
+    showToast("Couldn't read that photo — try another.");
+  }
+}
+// Short, quotable reference so a student can follow a complaint up with the mess committee
+// by name — e.g. "PSG-M4X7K2-A9".
+function newComplaintRef(){
+  const stamp = Date.now().toString(36).toUpperCase().slice(-6);
+  const rand = Math.random().toString(36).toUpperCase().slice(2,4);
+  return `PSG-${stamp}-${rand}`;
+}
+
+async function submitComplaint(){
+  const mess = document.getElementById('cMess').value;
+  const comment = document.getElementById('cComment').value.trim();
+  if (!comment){
+    showToast("Please describe the issue before submitting.");
+    return;
+  }
+
+  const ref = newComplaintRef();
+  showSheetLoading('complaintLoading', true);
+
+  // Primary action: send to the backend. This must succeed for the submit to count.
+  try{
+    await withMinLoadingTime(postComplaintToServer(mess, comment, complaintPhotoData, ref), 500);
+  }catch(e){
+    showSheetLoading('complaintLoading', false);
+    showToast("Couldn't reach the server — try again.");
+    return;
+  }
+
+  // Secondary: best-effort local cache, powers "My submissions" and the shared in-app view if present.
+  if (window.storage){
+    try{
+      const record = { mess, comment, photo: complaintPhotoData, ts: Date.now(), ref };
+      const key = `complaint_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+      await window.storage.set(key, JSON.stringify(record), true);
+    }catch(e){ /* non-fatal */ }
+  }
+
+  addMySubmission({ type:'complaint', mess, comment, ref, status:'submitted', ts: Date.now() });
+  showSheetLoading('complaintLoading', false);
+  haptic(12);
+  showToast(`Complaint sent · ${ref}`);
+  closeComplaintSheet();
+}
+
+/* ---------------- MY SUBMISSIONS (personal, this device only) ---------------- */
+async function getMySubmissions(){
+  try{
+    if (!window.storage) return [];
+    const res = await window.storage.get('my_submissions', false);
+    return res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    return [];
+  }
+}
+async function addMySubmission(entry){
+  if (!window.storage) return;
+  try{
+    const list = await getMySubmissions();
+    list.unshift(entry);
+    await window.storage.set('my_submissions', JSON.stringify(list.slice(0, 15)), false);
+  }catch(e){ /* non-fatal — the submission itself already went through */ }
+}
+function formatWhen(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}) + ' · ' +
+         d.toLocaleTimeString('en-IN', {hour:'numeric', minute:'2-digit'});
+}
+async function openMySubmissions(){
+  const body = document.getElementById('mySubBody');
+  body.innerHTML = `<div class="empty-note">Loading…</div>`;
+  document.getElementById('mySubBackdrop').classList.add('show');
+  document.getElementById('mySubSheet').classList.add('show');
+
+  const list = await getMySubmissions();
+  if (!list.length){
+    body.innerHTML = `<div class="empty-note">You haven't submitted anything yet.</div>`;
+    return;
+  }
+
+  const render = (statuses) => {
+    body.innerHTML = list.map(it => {
+      if (it.type === 'rating'){
+        const placeLabel = it.hall
+          ? `${messLabelFor(it.hall)} · ${menuLabelFor(it.menu)}`
+          : messLabelFor(it.mess); // fallback for entries saved before hall/menu were split
+        const mealLabel = GENERIC_MEAL_LABELS[it.meal] || it.meal;
+        return `<div class="mysub-item">
+          <div class="mysub-top">
+            <span>★ ${it.rating}/5 · ${placeLabel} · ${mealLabel}</span>
+            <span class="mysub-when">${formatWhen(it.ts)}</span>
+          </div>
+          ${it.comment ? `<div class="mysub-comment">${escapeHtml(it.comment)}</div>` : ''}
+        </div>`;
+      }
+      // Live status wins over whatever was stored locally at submit time.
+      const live = (it.ref && statuses[it.ref]) || null;
+      const status = (live && STATUS_LABELS[live.status] ? live.status : (it.status || 'submitted'));
+      const note = live && live.note ? live.note : '';
+      return `<div class="mysub-item">
+        <div class="mysub-top">
+          <span>⚠️ Complaint · ${messLabelFor(it.mess)}</span>
+          <span class="mysub-when">${formatWhen(it.ts)}</span>
+        </div>
+        <div class="mysub-comment">${escapeHtml(it.comment)}</div>
+        <div class="mysub-foot">
+          <span class="status-chip ${status}">${STATUS_LABELS[status] || 'Submitted'}</span>
+          ${it.ref ? `<span class="mysub-ref">REF ${escapeHtml(it.ref)}</span>` : ''}
+        </div>
+        ${note ? `<div class="status-note">“${escapeHtml(note)}”</div>` : ''}
+      </div>`;
+    }).join('');
+  };
+
+  render({});   // paint immediately from local data, then upgrade if the server answers
+  const refs = list.filter(it => it.type === 'complaint' && it.ref).map(it => it.ref);
+  if (refs.length){
+    const statuses = await fetchComplaintStatuses(refs);
+    if (Object.keys(statuses).length){
+      render(statuses);
+      // Remember the latest known status so it still shows while offline.
+      const updated = list.map(it => (it.ref && statuses[it.ref] && statuses[it.ref].status)
+        ? { ...it, status: statuses[it.ref].status } : it);
+      if (window.storage){
+        try{ await window.storage.set('my_submissions', JSON.stringify(updated), false); }catch(e){ /* non-fatal */ }
+      }
+    }
+  }
+}
+function closeMySubmissions(){
+  document.getElementById('mySubBackdrop').classList.remove('show');
+  document.getElementById('mySubSheet').classList.remove('show');
+}
+
+
+/* ---------------- INIT ----------------
+   The first paint now happens inside boot(), after the saved mess preference has been
+   read. Rendering here as well would paint North first and visibly snap to South a
+   frame later for anyone who'd chosen South. */
+
+/* ---------------- SERVICE WORKER ----------------
+   Registered with a relative path so it works under a GitHub Pages sub-path
+   (https://<user>.github.io/<repo>/) as well as at a domain root. Wrapped in a
+   guard because service workers need https — opening index.html straight off
+   disk (file://) skips this instead of throwing.
+
+   The try/catch is not belt-and-braces. In a sandboxed iframe without
+   'allow-same-origin', `'serviceWorker' in navigator` is still TRUE — the property is
+   on the prototype — but READING it throws a SecurityError. An uncaught throw here
+   takes out every line of setup after it, so the whole app dies to make a cache. */
+try {
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    window.addEventListener('load', () => {
+      try {
+        navigator.serviceWorker.register('./sw.js').catch(() => { /* non-fatal */ });
+      } catch(e){ /* sandboxed — offline support is a bonus, not a requirement */ }
+    });
+  }
+} catch(e){ /* navigator.serviceWorker is unreadable here; carry on without it */ }
+
+
+
+/* ================= VIEW ROUTER =================
+   Four screens, one at a time. Each keeps its own scroll position, because
+   coming back to the Week tab halfway down the list and being thrown to the
+   top is the kind of thing that makes an app feel cheap. */
+const VIEW_TITLES = { today:'Today', week:'Full week', search:'Find a dish', you:'Your activity', more:'About' };
+const scrollMemory = {};
+let currentView = 'today';
+
+function go(view){
+  if (!VIEW_TITLES[view]) view = 'today';
+  if (view === currentView){
+    // Tapping the active tab returns you to the top — standard app behaviour.
+    window.scrollTo({ top:0, behavior:'smooth' });
+    return;
+  }
+  haptic(6);
+  scrollMemory[currentView] = window.scrollY;
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  const el = document.getElementById('view-' + view);
+  if (el) el.classList.add('on');
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view === view));
+  const title = document.getElementById('tbTitle');
+  if (title) title.textContent = VIEW_TITLES[view];
+
+  currentView = view;
+  if (location.hash.slice(1) !== view) history.replaceState(null,'','#'+view);
+
+  window.scrollTo({ top: scrollMemory[view] || 0, behavior:'auto' });
+
+  if (view === 'you') renderYou();
+  // Both views own a mess toggle, and a thumb can only be positioned once its view is
+  // on screen and has a measurable width.
+  if (view === 'today') renderTiers(false);
+  if (view === 'week') { renderTiers(false); renderDayRow(); }
+  if (view === 'search') setTimeout(() => { const i=document.getElementById('searchInput'); if(i) i.focus(); }, 260);
+}
+
+// Hairline under the top bar only once content has scrolled beneath it.
+window.addEventListener('scroll', () => {
+  const tb = document.getElementById('topbar');
+  if (tb) tb.classList.toggle('stuck', window.scrollY > 8);
+}, { passive:true });
+
+/* ================= TODAY VIEW ================= */
+function rateCurrentMeal(){
+  const c = mealClock();
+  // Only preset the meal the card is actually showing for TODAY. In 'done' the card shows
+  // tomorrow's breakfast, so presetting it would aim the sheet at the wrong day.
+  if (c.state === 'serving') openSheet(c.meal);
+  else openSheet();
+}
+
+function renderToday(){
+  const c = mealClock();
+  const mess = MENU[state.mess];
+  const dayForClock = (c.state === 'done') ? DAYS[(DAYS.indexOf(todayName) + 1) % 7] : todayName;
+
+  // The "North Indian Mess" eyebrow is gone — the toggle directly below the date line
+  // already says which menu is selected, and it was 133px of masthead saying it twice.
+
+  // --- the big card ---
+  const label = document.getElementById('nowLabel');
+  const meal  = document.getElementById('nowMeal');
+  const tWrap = document.getElementById('nowTime');
+  const tText = document.getElementById('nowTimeText');
+  const items = document.getElementById('nowItems');
+  const rate  = document.getElementById('nowRate');
+
+  if (label && meal && tText && items){
+    label.textContent = c.state === 'serving' ? 'Being served now'
+                      : c.state === 'done'    ? 'Tomorrow, first up'
+                      : 'Up next';
+    meal.textContent  = mess.mealLabels[c.meal];
+    tText.textContent = c.state === 'serving' ? `${formatGap(c.mins)} left` : `in ${formatGap(c.mins)}`;
+    if (tWrap) tWrap.classList.toggle('live', c.state === 'serving');
+
+    const fullList = (mess.days[dayForClock] && mess.days[dayForClock][c.meal]) || [];
+    const list = visibleItems(fullList);
+    items.innerHTML = list.slice(0,6).map(it => {
+      const p = getPriced(it);
+      // Specials were highlighted on the Week card but plain here, so the one screen
+      // people actually open was the one that didn't tell them it's ice cream day.
+      if (isSpecial(dayForClock, c.meal, it)){
+        return `<span class="now-chip special"><span class="vnv ${isNonVeg(it)?'nonveg':'veg'}"></span>` +
+               `${SPECIAL_ICONS[it] || '✨'} ${escapeHtml(it)}</span>`;
+      }
+      const inner = `<span class="vnv ${isNonVeg(it)?'nonveg':'veg'}"></span>${escapeHtml(it)}` +
+                    (p ? `<span class="price">₹${p.price}</span>` : '');
+      // A priced chip is a link here exactly as it is on the Week card. It looked
+      // identical in both places but only worked in one, so people learned "the ₹ pill
+      // means tap to book" on the Week tab and then tapped a dead chip on the screen
+      // they actually open first.
+      return p ? `<a class="now-chip paid" href="${BOOK_URL}" target="_blank" rel="noopener">${inner}</a>`
+               : `<span class="now-chip">${inner}</span>`;
+    }).join('') +
+    // "+3 more" was a dead chip; it now opens this exact meal rather than the week.
+    (list.length > 6
+      ? `<button type="button" class="now-chip more" onclick="openMealSheet('${c.meal}','${dayForClock}')">+${list.length-6} more</button>`
+      : '');
+
+    // Can only rate a meal that has actually started, and only once.
+    if (rate){
+      getRatedCombos().then(combos => {
+        const already = REVIEW_MESSES.some(h => !!combos[comboId(`${h.value}_${state.mess}`, todayISO(), c.meal)]);
+        // 'done' means the card has rolled over to TOMORROW's breakfast. Rating it would
+        // have quietly scored this morning's breakfast instead — the same day-mismatch bug
+        // as the week view, just on a one-day offset.
+        if (c.state === 'done')    { rate.disabled = true;  rate.textContent = `Opens ${formatMealStart(c.meal)} tomorrow`; }
+        else if (c.state === 'upcoming'){ rate.disabled = true;  rate.textContent = `Opens in ${formatGap(c.mins)}`; }
+        else if (already)          { rate.disabled = true;  rate.textContent = '✓ Already rated'; }
+        else                       { rate.disabled = false; rate.textContent = `Rate ${mess.mealLabels[c.meal].toLowerCase()}`; }
+      });
+    }
+  }
+
+  // --- the other meals today ---
+  const rest = document.getElementById('restToday');
+  if (!rest) return;
+  const now = nowMins();
+  rest.innerHTML = MEAL_KEYS.filter(k => k !== c.meal || c.state === 'done').map(k => {
+    const list = visibleItems((mess.days[todayName] && mess.days[todayName][k]) || []);
+    const past = now >= minsOf(MEAL_END[k]);
+    const preview = list.length
+      ? list.slice(0,3).join(' · ') + (list.length > 3 ? ` · +${list.length-3}` : '')
+      : 'Nothing vegetarian';
+    // Opens THIS meal, expanded. It used to call go('week'), which discarded the one
+    // thing you'd just told it and made you find the meal again in the full week.
+    return `<button class="mini${past ? ' done':''}" onclick="openMealSheet('${k}','${todayName}')">
+      <span class="mini-when">${formatMealStart(k).replace(' ','')}</span>
+      <span class="mini-body">
+        <span class="mini-name">${MEAL_LABELS[k]}</span>
+        <span class="mini-items">${escapeHtml(preview)}</span>
+      </span>
+      <span class="mini-arrow">›</span>
+    </button>`;
+  }).join('');
+}
+
+/* ================= VEG-ONLY FILTER ================= */
+/* Veg-only now REMOVES non-veg items instead of dimming them to 32% opacity.
+   Dimming was a half-measure: if you've asked not to see the chicken, a ghost of the
+   chicken still taking up a row is not what you asked for. Every list runs through this,
+   so the filter behaves the same on the Week cards, the Now card, the rest-of-today
+   previews and the meal sheet — it used to apply to exactly one of them. */
+function visibleItems(list){
+  return vegOnly ? list.filter(it => !isNonVeg(it)) : list;
+}
+// One place that decides what an item chip looks like, shared by the Week cards and the
+// meal sheet so the two can't drift.
+function itemChipHtml(it, day, mealKey){
+  if (isSpecial(day, mealKey, it)){
+    return `<span class="chip special">${vnvMark(it)}${SPECIAL_ICONS[it] || '✨'} ${escapeHtml(it)}</span>`;
+  }
+  const priced = getPriced(it);
+  if (priced){
+    return `<a class="chip paid" href="${BOOK_URL}" target="_blank" rel="noopener">${vnvMark(it)}${escapeHtml(it)}<span class="price">₹${priced.price}</span></a>`;
+  }
+  return `<span class="chip">${vnvMark(it)}${escapeHtml(it)}</span>`;
+}
+
+function toggleVegOnly(){
+  haptic(6);
+  vegOnly = !vegOnly;
+  const chip = document.getElementById('vegChip');
+  if (chip) chip.classList.toggle('on', vegOnly);
+  renderMain();
+  renderToday();   // the Now card and the day's previews honour it too now
+  showToast(vegOnly ? 'Hiding non-vegetarian items' : 'Showing everything');
+}
+
+/* ================= SEARCH: HISTORY + SUGGESTIONS ================= */
+/* An empty search box used to be a dead screen with a sentence of instructions on it.
+   Two things fill it usefully: what you looked for before, and what's worth looking for.
+   Suggestions lead with the paid items because those are the ones people actually hunt
+   for — they cost money and you have to book them, so "is chicken on this week" is the
+   question, not "is rice on this week". */
+const SEARCH_HISTORY_KEY = 'search_history';
+const SEARCH_HISTORY_MAX = 8;
+let searchHistory = [];
+
+async function loadSearchHistory(){
+  try{
+    if (!window.storage) return;
+    const res = await window.storage.get(SEARCH_HISTORY_KEY, false);
+    if (res && res.value){
+      const parsed = JSON.parse(res.value);
+      if (Array.isArray(parsed)) searchHistory = parsed.filter(x => typeof x === 'string').slice(0, SEARCH_HISTORY_MAX);
+    }
+  }catch(e){ searchHistory = []; }   // corrupt or blocked storage — start clean
+}
+async function rememberSearch(term){
+  const t = term.trim();
+  if (t.length < 2) return;
+  // Case-insensitive de-dupe, most recent first.
+  searchHistory = [t, ...searchHistory.filter(x => x.toLowerCase() !== t.toLowerCase())]
+                    .slice(0, SEARCH_HISTORY_MAX);
+  try{
+    if (window.storage) await window.storage.set(SEARCH_HISTORY_KEY, JSON.stringify(searchHistory), false);
+  }catch(e){ /* non-fatal */ }
+}
+async function clearSearchHistory(){
+  haptic(6);
+  searchHistory = [];
+  try{
+    if (window.storage) await window.storage.set(SEARCH_HISTORY_KEY, '[]', false);
+  }catch(e){ /* non-fatal */ }
+  const out = document.getElementById('searchResults');
+  if (out) renderSearchIdle(out);
+}
+function searchFor(term){
+  haptic(6);
+  const i = document.getElementById('searchInput');
+  if (!i) return;
+  i.value = term;
+  runSearch();
+  i.blur();   // let the results have the screen rather than the keyboard
+}
+
+// Built from PRICED_ITEMS so it can never drift from the actual menu: rename or drop a
+// paid dish and the suggestion follows.
+//
+// The hard part is that PRICED_ITEMS carries the same dish under several spellings —
+// "gobi chilli" and "chilli gobi", "boiled egg" / "boiled egg (full)" / "full boil egg".
+// Matching on the string, or on a two-word prefix, keeps all of them and the list reads
+// like a stutter. So each key is reduced to a SET of stemmed words, order discarded:
+//   "gobi chilli", "chilli gobi"      -> {chilli, gobi}   same set, one survives
+//   "boiled egg", "full boil egg"     -> {boil, egg} and {boil, egg, full}
+// and a set that contains one already shown is dropped as a variant of it. Search is
+// substring-based anyway, so the shortest spelling finds the others.
+function stemSet(name){
+  return new Set(
+    name.replace(/\(.*?\)/g, ' ')
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(w => w.replace(/(ed|s)$/,''))   // boiled->boil, eggs->egg
+  );
+}
+const titleCase = s => s.replace(/\b[a-z]/g, m => m.toUpperCase());
+
+function paidSuggestions(limit){
+  const kept = [];
+  for (const key of Object.keys(PRICED_ITEMS)){
+    const set = stemSet(key);
+    if (!set.size) continue;
+    // Skip anything that's a variant of, or a longer restatement of, one already kept.
+    const dup = kept.some(k => [...k.set].every(w => set.has(w)) || [...set].every(w => k.set.has(w)));
+    if (dup) continue;
+    kept.push({ set, term: titleCase(key.replace(/\(.*?\)/g,'').trim()), price: PRICED_ITEMS[key].price });
+    if (kept.length >= limit) break;
+  }
+  return kept.map(({term, price}) => ({ term, price }));
+}
+
+function renderSearchIdle(out){
+  const hist = searchHistory.length ? `
+    <div class="sugg">
+      <div class="sugg-head">
+        <span>Recent</span>
+        <button type="button" class="sugg-clear" onclick="clearSearchHistory()">Clear</button>
+      </div>
+      <div class="sugg-row">
+        ${searchHistory.map(h => `<button type="button" class="sugg-chip" onclick="searchFor('${escapeAttr(h)}')">${escapeHtml(h)}</button>`).join('')}
+      </div>
+    </div>` : '';
+
+  const paid = paidSuggestions(8);
+  const paidRow = `
+    <div class="sugg">
+      <div class="sugg-head"><span>Paid items</span></div>
+      <div class="sugg-row">
+        ${paid.map(p => `<button type="button" class="sugg-chip paid" onclick="searchFor('${escapeAttr(p.term)}')">
+             ${escapeHtml(p.term)}<span class="sc-price">₹${p.price}</span></button>`).join('')}
+      </div>
+    </div>`;
+
+  const common = ['Paneer','Biryani','Dosa','Sweet','Icecream','Chicken'];
+  const commonRow = `
+    <div class="sugg">
+      <div class="sugg-head"><span>Try</span></div>
+      <div class="sugg-row">
+        ${common.map(c => `<button type="button" class="sugg-chip" onclick="searchFor('${escapeAttr(c)}')">${escapeHtml(c)}</button>`).join('')}
+      </div>
+    </div>`;
+
+  out.innerHTML = hist + paidRow + commonRow;
+}
+
+/* ================= SEARCH ================= */
+// Attribute-safe: escapeHtml alone leaves single quotes intact, which would break out of
+// the onclick='…' above on a term containing an apostrophe.
+function escapeAttr(s){
+  return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;')
+                  .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+let rememberTimer = null;
+function clearSearch(){
+  const i = document.getElementById('searchInput');
+  if (i){ i.value=''; i.focus(); }
+  clearTimeout(rememberTimer);   // don't save a term the user just wiped
+  runSearch();
+}
+function runSearch(){
+  const input = document.getElementById('searchInput');
+  const out   = document.getElementById('searchResults');
+  const box   = document.getElementById('searchBox');
+  if (!input || !out) return;
+  const q = input.value.trim().toLowerCase();
+  if (box) box.classList.toggle('has', q.length > 0);
+
+  if (q.length < 2){
+    renderSearchIdle(out);
+    return;
+  }
+  // Remember the search, but only once it has actually produced something worth
+  // remembering — debounced by the results check below, not saved on every keystroke.
+
+  const hits = [];
+  ['north','south'].forEach(mk => {
+    const m = MENU[mk];
+    DISPLAY_DAYS.forEach(day => {
+      MEAL_KEYS.forEach(meal => {
+        (m.days[day][meal] || []).forEach(item => {
+          if (item.toLowerCase().includes(q)) hits.push({ mk, m, day, meal, item });
+        });
+      });
+    });
+  });
+
+  if (!hits.length){
+    out.innerHTML = `<div class="empty">
+      <div class="empty-ico">🍽️</div>
+      <h3>Nothing matching "${escapeHtml(input.value.trim())}"</h3>
+      <p>Try a shorter word — "paneer" rather than "paneer butter masala".</p>
+    </div>`;
+    return;   // a search that found nothing isn't worth remembering
+  }
+
+  // Save to history only after typing stops, and only for a query that found something.
+  // Saving per keystroke would fill the list with "p", "pa", "pan", "pane"…
+  clearTimeout(rememberTimer);
+  const settled = input.value.trim();
+  rememberTimer = setTimeout(() => rememberSearch(settled), 1000);
+
+  const hi = s => escapeHtml(s).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'), '<span class="hit">$1</span>');
+
+  // One row per DISH, not per occurrence. Searching "egg" used to return 24 rows, most of
+  // them the same "Boiled Egg ₹10" repeated for every day and both messes — you had to
+  // read the whole list to learn the one useful fact, which is "most mornings". Grouping
+  // turns that into three rows, each with its days as tappable chips.
+  const groups = new Map();
+  hits.forEach(h => {
+    const key = h.item.toLowerCase();
+    if (!groups.has(key)) groups.set(key, { item: h.item, occ: [] });
+    groups.get(key).occ.push(h);
+  });
+  // Most widely served first — the dish you'll actually run into is the useful answer.
+  const ordered = [...groups.values()].sort((a,b) => b.occ.length - a.occ.length);
+
+  const dishes = ordered.length;
+  out.innerHTML =
+    `<p class="eyebrow" style="margin-bottom:12px">${dishes} dish${dishes>1?'es':''} · ${hits.length} serving${hits.length>1?'s':''}</p>` +
+    ordered.map(g => {
+      const p = getPriced(g.item);
+      // De-duplicate the day+meal+mess combinations, keeping DISPLAY_DAYS order.
+      const seen = new Set();
+      const chips = g.occ
+        .slice()
+        .sort((a,b) => DISPLAY_DAYS.indexOf(a.day) - DISPLAY_DAYS.indexOf(b.day)
+                    || MEAL_KEYS.indexOf(a.meal) - MEAL_KEYS.indexOf(b.meal))
+        .filter(h => { const k = `${h.mk}|${h.day}|${h.meal}`; if (seen.has(k)) return false; seen.add(k); return true; })
+        .map(h => `<button type="button" class="hitchip" onclick="jumpTo('${h.mk}','${h.day}')"
+                     aria-label="${escapeHtml(g.item)} — ${h.day}, ${h.m.mealLabels[h.meal]}, ${h.m.label}">
+                     <span class="hc-day">${DAY_ABBR[h.day]}</span>
+                     <span class="hc-meal">${h.m.mealLabels[h.meal]}</span>
+                     <span class="hc-mess">${h.mk === 'north' ? 'N' : 'S'}</span>
+                   </button>`).join('');
+      const messes = [...new Set(g.occ.map(h => h.mk))];
+      const where = messes.length === 2 ? 'Both messes' : (messes[0] === 'north' ? 'North Indian only' : 'South Indian only');
+      return `<div class="dish">
+        <div class="dish-top">
+          <span class="dish-name">${hi(g.item)}${p?` <span class="price">₹${p.price}</span>`:''}</span>
+          <span class="vnv ${isNonVeg(g.item)?'nonveg':'veg'}"></span>
+        </div>
+        <div class="dish-meta">${where} · ${g.occ.length} time${g.occ.length>1?'s':''} a week</div>
+        <div class="dish-chips">${chips}</div>
+      </div>`;
+    }).join('');
+}
+// Jump from a search hit straight to that day in the Week view.
+function jumpTo(messKey, day){
+  state.mess = messKey;
+  state.day  = day;
+  renderTiers(false); renderDayRow(); renderMain(); renderToday();
+  go('week');
+}
+
+/* ================= YOU VIEW ================= */
+async function renderYou(){
+  const statsEl = document.getElementById('youStats');
+  const body    = document.getElementById('youBody');
+  if (!body) return;
+
+  const list = await getMySubmissions();
+  const ratings = list.filter(x => x.type === 'rating');
+  const reports = list.filter(x => x.type === 'complaint');
+  const open    = reports.filter(x => (x.status || 'submitted') !== 'resolved').length;
+
+  if (statsEl){
+    statsEl.innerHTML = `
+      <div class="stat"><div class="n">${ratings.length}</div><div class="l">Meals rated</div></div>
+      <div class="stat"><div class="n">${reports.length}</div><div class="l">Issues reported</div></div>
+      <div class="stat"><div class="n">${open}</div><div class="l">Still open</div></div>`;
+  }
+  // The identity sheet promises this is changeable from here, so it has to be here.
+  const idRow = document.getElementById('youIdentity');
+  if (idRow){
+    // The row is the button now, so these are spans — a nested button would swallow
+    // taps aimed at the row and give two overlapping targets.
+    idRow.innerHTML = identity
+      ? `<span>Submitting as <b>${escapeHtml(identity.name)}</b> · ${escapeHtml(identity.roll)}</span>
+         <span class="whoami-cta">Change</span>`
+      : `<span>No name or roll number saved yet.</span>
+         <span class="whoami-cta">Add</span>`;
+    idRow.hidden = false;
+  }
+  const badge = document.getElementById('youBadge');
+  if (badge){ badge.hidden = open === 0; badge.textContent = open; }
+
+  if (!list.length){
+    body.innerHTML = `<div class="empty">
+      <div class="empty-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="m12 3 2.7 5.8 6.3.8-4.6 4.3 1.2 6.1-5.6-3-5.6 3 1.2-6.1L3 9.6l6.3-.8L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+      <h3>Nothing here yet</h3>
+      <p>Rate a meal or report an issue and it'll show up here, along with what the committee did about it.</p>
+    </div>`;
+    return;
+  }
+
+  const paint = (statuses) => {
+    body.innerHTML = list.map(it => {
+      if (it.type === 'rating'){
+        const place = it.hall ? `${messLabelFor(it.hall)} · ${menuLabelFor(it.menu)}` : messLabelFor(it.mess);
+        return `<div class="mysub-item">
+          <div class="mysub-top">
+            <span>${'★'.repeat(it.rating)}<span style="color:var(--faint)">${'★'.repeat(5-it.rating)}</span> · ${place}</span>
+            <span class="mysub-when">${formatWhen(it.ts)}</span>
+          </div>
+          <div class="mysub-comment" style="color:var(--faint);margin-top:4px">${GENERIC_MEAL_LABELS[it.meal] || it.meal}</div>
+          ${it.comment ? `<div class="mysub-comment">${escapeHtml(it.comment)}</div>` : ''}
+        </div>`;
+      }
+      const live = (it.ref && statuses[it.ref]) || null;
+      const status = (live && STATUS_LABELS[live.status]) ? live.status : (it.status || 'submitted');
+      const note = live && live.note ? live.note : '';
+      return `<div class="mysub-item">
+        <div class="mysub-top">
+          <span>⚠️ ${messLabelFor(it.mess)}</span>
+          <span class="mysub-when">${formatWhen(it.ts)}</span>
+        </div>
+        <div class="mysub-comment">${escapeHtml(it.comment)}</div>
+        <div class="mysub-foot">
+          <span class="status-chip ${status}">${STATUS_LABELS[status] || 'Submitted'}</span>
+          ${it.ref ? `<span class="mysub-ref">REF ${escapeHtml(it.ref)}</span>` : ''}
+        </div>
+        ${note ? `<div class="status-note">"${escapeHtml(note)}"</div>` : ''}
+      </div>`;
+    }).join('');
+  };
+
+  paint({});
+  const refs = reports.filter(r => r.ref).map(r => r.ref);
+  if (refs.length){
+    const statuses = await fetchComplaintStatuses(refs);
+    if (Object.keys(statuses).length) paint(statuses);
+  }
+}
+
+/* ================= ADD TO HOME SCREEN ================= */
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  const bar = document.getElementById('installBar');
+  if (bar) bar.classList.add('show');
+});
+async function installApp(){
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  const bar = document.getElementById('installBar');
+  if (bar) bar.classList.remove('show');
+}
+// iOS gives no install event at all, so tell Safari users how to do it manually.
+(function iosInstallHint(){
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if (!isIOS || standalone) return;
+  const bar = document.getElementById('installBar');
+  if (!bar) return;
+  bar.querySelector('.install-b').innerHTML = '<b>Add to home screen</b><span>Tap Share, then "Add to Home Screen"</span>';
+  const btn = bar.querySelector('button');
+  if (btn) btn.remove();
+  bar.classList.add('show');
+})();
+
+/* ================= INIT ================= */
+(async function boot(){
+  // Restore the saved mess BEFORE anything renders, or the app paints North, then
+  // visibly snaps to South a frame later.
+  await initMenuPref();
+  await loadIdentity();        // before anything renders a "Submitting as …" line
+  await loadSearchHistory();   // before runSearch(), or the first idle render shows none
+  await initSwipeHint();
+  renderWhoami();
+  renderClock();
+  renderTiers(false);
+  renderDayRow();
+  renderMain();
+
+  const hash = location.hash.slice(1);
+  if (VIEW_TITLES[hash] && hash !== 'today'){
+    currentView = 'today';
+    go(hash);
+  }
+  const si = document.getElementById('searchInput');
+  if (si) si.addEventListener('input', runSearch);
+  runSearch();
+  renderToday();
+  renderYou();
+})();
+</script>
+</body>
+</html>

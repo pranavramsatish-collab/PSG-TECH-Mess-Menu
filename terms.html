@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Terms — PSG Tech Mess Menu</title>
+<meta name="description" content="Terms of use for the PSG Tech hostel mess menu app.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12150f; --surface:#1c2116; --line:rgba(244,239,225,.11);
+  --accent:#e7a93c; --on-accent:#1b1f14;
+  --ink:#f4efe1; --muted:rgba(244,239,225,.72); --faint:rgba(244,239,225,.54);
+}
+@media (prefers-color-scheme:light){
+  :root{ --bg:#f7f3e8; --surface:#fffdf7; --line:rgba(30,34,24,.14);
+         --accent:#b9761a; --on-accent:#fffdf7;
+         --ink:#1e2218; --muted:rgba(30,34,24,.74); --faint:rgba(30,34,24,.55); }
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Work Sans',system-ui,sans-serif; line-height:1.68; font-size:16.5px;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:660px; margin:0 auto; padding:clamp(28px,7vw,64px) clamp(18px,5vw,32px) 90px; }
+.back{
+  display:inline-flex; align-items:center; gap:8px; min-height:44px;
+  color:var(--accent); text-decoration:none; font-size:14.5px; font-weight:500; margin-bottom:26px;
+}
+.back:hover{ text-decoration:underline; }
+h1{ font-family:'Fraunces',Georgia,serif; font-weight:600; letter-spacing:-.02em;
+    font-size:clamp(30px,6vw,44px); line-height:1.1; margin:0 0 10px; }
+.sub{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--faint); margin-bottom:34px; }
+h2{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(20px,3.4vw,25px);
+    letter-spacing:-.01em; margin:40px 0 12px; }
+p{ margin:0 0 16px; color:var(--muted); }
+strong{ color:var(--ink); font-weight:600; }
+ul{ margin:0 0 16px; padding-left:22px; color:var(--muted); }
+li{ margin-bottom:9px; }
+a{ color:var(--accent); }
+.box{
+  border:1px solid var(--line); background:var(--surface); border-radius:16px;
+  padding:20px 22px; margin:24px 0;
+}
+.box p:last-child{ margin-bottom:0; }
+.tag{
+  display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9.5px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:99px; padding:4px 10px; margin-bottom:12px;
+}
+footer{ margin-top:48px; padding-top:22px; border-top:1px solid var(--line);
+        color:var(--faint); font-size:13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="./">← Back to the app</a>
+
+  <h1>Terms of use</h1>
+  <div class="sub">PSG Tech Mess Menu · Last updated 20 September 2026</div>
+
+  <div class="box">
+    <span class="tag">In one line</span>
+    <p>A free student-built tool for checking the hostel mess menu and telling the mess
+       committee what you think. Use it honestly; it comes with no guarantees.</p>
+  </div>
+
+  <h2>What this is</h2>
+  <p>A free web app that shows the PSG Tech hostel mess menu and lets hostel residents
+     rate meals and report problems to the mess committee. It is built and run by
+     <strong>Pranav Ram Satish</strong>, a student, as an independent project. It is
+     <strong>not an official</strong> PSG College of Technology application, and neither
+     the college nor the hostel administration operates it or is responsible for it.</p>
+
+  <h2>Using it</h2>
+  <p>You may use the app if you have a Google account. By rating a meal or filing a
+     report you agree to these terms and to the <a href="./privacy.html">privacy
+     notice</a>.</p>
+  <ul>
+    <li><strong>One rating per person per meal.</strong> Don't try to get round it by
+       using another account or someone else's roll number.</li>
+    <li><strong>Rate honestly.</strong> A rating is meant to describe the meal you
+       actually ate.</li>
+    <li><strong>Report real problems.</strong> Reports go to real people who have to
+       read and act on each one. Don't use them for abuse, jokes, or anything about a
+       named individual that you would not say to their face.</li>
+    <li><strong>Photos</strong> you attach should be of the food or the mess. Don't
+       upload photos of people without their agreement.</li>
+    <li>Don't attempt to break, overload, or extract data from the app or the database
+       behind it.</li>
+  </ul>
+  <p>Ratings or reports that break these rules may be deleted, and access may be
+     withdrawn.</p>
+
+  <h2>The menu may be wrong</h2>
+  <p>The menu shown is a fixed timetable held in the app. The mess can and does change
+     what it serves at short notice, and the app will not know. <strong>Treat it as a
+     good guess, not a promise.</strong> Don't rely on it for anything that matters —
+     an allergy, a fast, a medical requirement. Check with the mess.</p>
+
+  <h2>No guarantees</h2>
+  <p>The app is provided as-is, free, with no warranty of any kind. It may be
+     unavailable, lose data, or stop working entirely. It depends on services
+     (Supabase, Google, the host) that are outside anyone's control here. To the extent
+     the law allows, the operator is not liable for any loss arising from using it or
+     from relying on what it shows.</p>
+
+  <h2>What you write</h2>
+  <p>You keep whatever rights you have in your ratings, comments, reports and photos.
+     By submitting them you allow the app and the mess committee to store them, show
+     them to the committee, and include your scores in the average shown to other
+     students. Your individual scores and your reports are not shown to other students —
+     see the <a href="./privacy.html">privacy notice</a>.</p>
+
+  <h2>Stopping</h2>
+  <p>You can stop using the app at any time, revoke its access from
+     <a href="https://myaccount.google.com/permissions" rel="noopener">your Google
+     account permissions page</a>, and email
+     <a href="mailto:pranavram.sd@gmail.com">pranavram.sd@gmail.com</a> to have your
+     data removed.</p>
+
+  <h2>Changes</h2>
+  <p>These terms may change; the date at the top changes with them. Continuing to use
+     the app after a change means accepting it.</p>
+
+  <h2>Questions</h2>
+  <p><a href="mailto:pranavram.sd@gmail.com">pranavram.sd@gmail.com</a></p>
+
+  <footer>
+    PSG Tech Mess Menu · an independent student project ·
+    <a href="./privacy.html">Privacy</a> · <a href="./">The app</a>
+  </footer>
+
+</div>
+</body>
+</html>
