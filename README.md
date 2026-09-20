@@ -46,7 +46,7 @@ until their browser happens to revalidate.
 | `icon-192.png`, `icon-512.png` | App icons |
 | `icon-maskable-512.png` | Padded variant, so Android's circular mask doesn't clip the artwork |
 | `privacy.html`, `terms.html` | Required by Google to publish the sign-in, and worth having anyway |
-| `prototype-*.html` | Three 3D experiments. Not part of the app; safe to delete |
+| `supabase.js` | Supabase client, served from here rather than a CDN so the service worker can cache it |
 
 ## How it's put together
 
@@ -71,6 +71,23 @@ a bright colour, so the accent is split into three roles — `--accent` for fill
 `--accent-ink` for accent-coloured text on the page, `--on-accent` for text on top of a
 turmeric fill. Collapsing those into one token is how you get white text on yellow.
 
+## Signing in
+
+Google, through Supabase Auth. `supabase.js` is served from this repo rather than a CDN
+on purpose: sign-in gates the whole app, so a script the browser cannot fetch would mean
+a blank page instead of a cached menu. Same origin also means the service worker caches
+it with the rest of the shell.
+
+The project URL and the publishable key are in `index.html` and are meant to be public —
+they are protected by Row Level Security, not by being hidden. The `service_role` key
+must never appear here.
+
+Your name comes from Google. Your roll number does not, so it is asked for once and
+stored in the account's own metadata, which is why you don't retype it on a laptop.
+
+Someone who has signed in before still gets the cached menu with no signal. Someone who
+never has is told why, rather than shown a button that cannot work.
+
 ## Backend
 
 Ratings and reports currently POST to a FastAPI service on Render, which writes to
@@ -87,10 +104,12 @@ Until that lands, two things in the UI are honest about being incomplete:
 
 ## Known limitations
 
-- **The password gate is not security.** `APP_PASSWORD` is in the page source and anyone
-  can read it. It's a speed bump. Google sign-in is the replacement.
-- **Nothing yet stops someone re-rating.** The once-per-person rule is enforced in the
-  browser against data the browser supplied. Real enforcement is a unique index plus a
-  verified `auth.uid()` in the database — that's the point of the backend change above.
+- **Nothing yet stops someone re-rating.** Sign-in is real now, but the once-per-person
+  rule still runs in the browser against data the browser supplied. Real enforcement is
+  a unique index plus a verified `auth.uid()` in the database — that arrives with the
+  backend change above.
+- **Signing in proves you have a Google account, not that you live in the hostel.**
+  Day scholars and anyone else can sign in. A one-time hostel code or an allowlist is
+  the fix if that ever matters.
 - **The menu can be wrong.** It's a fixed timetable baked into the app; the mess changes
   what it serves without telling anyone. Don't rely on it for an allergy or a fast.
