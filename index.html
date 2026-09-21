@@ -3049,6 +3049,12 @@ function friendlyWriteError(err){
 async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
   const user = requireSession();
   const { error } = await sb.from('ratings').insert({
+    // `user_id` is NOT NULL on the live table — a fact the local replica used to
+    // develop the migration got wrong, so dropping it here failed every insert
+    // with a constraint violation. It holds the same value as student_id now
+    // rather than the old random per-device number, so the legacy column stays
+    // truthful instead of being filled with something meaningless to satisfy it.
+    user_id:    user.id,
     student_id: user.id,
     roll:       identity ? identity.roll : null,
     full_name:  identity ? identity.name : null,
@@ -3064,6 +3070,12 @@ async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
 async function postComplaint({ hall, comment, ref }){
   const user = requireSession();
   const { error } = await sb.from('complaints').insert({
+    // Same story as ratings.user_id: `mess` is NOT NULL on the live table. It is
+    // also the column that carried two different meanings — 10 rows say
+    // north/south, 3 say g/ab — which is why `hall` exists. Writing the hall into
+    // both keeps the constraint satisfied without adding a fourteenth row of
+    // ambiguity; `hall` is the one to read.
+    mess:       hall,
     student_id: user.id,
     roll:       identity ? identity.roll : null,
     full_name:  identity ? identity.name : null,
