@@ -1003,7 +1003,11 @@ textarea::placeholder{ color:var(--faint); }
   font-size:13.5px; font-weight:600; opacity:0; pointer-events:none;
   transition:opacity .25s ease,transform .25s ease; z-index:95;
   box-shadow:var(--sh-lg); max-width:calc(100% - 36px); text-align:center;
+  line-height:1.45; white-space:normal; overflow-wrap:anywhere;
 }
+/* A one-line pill is the wrong shape for a sentence, so a long message squares
+   off rather than being clipped into uselessness. */
+.toast.long{ border-radius:var(--r-lg); padding:14px 18px; font-weight:500; }
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* ---------- Lock ---------- */
@@ -3010,21 +3014,36 @@ function requireSession(){
   return session.user;
 }
 
-/* Postgres speaks in codes. Turn the three a student can actually cause into
-   something that reads like an answer rather than a stack trace. */
+/* Postgres speaks in codes. Turn the ones a student can actually cause into
+   something that reads like an answer rather than a stack trace.
+
+   Anything NOT in that list returns the real message instead of null. The first
+   version collapsed every unknown failure into "Couldn't reach the server", which
+   is a lie when the server answered perfectly well and said no — and it left the
+   only person who could diagnose it staring at a sentence with no information in
+   it. An unrecognised error is exactly the one worth showing verbatim. */
 function friendlyWriteError(err){
-  const code = (err && (err.code || err.status)) || '';
+  const code = String((err && (err.code || err.status)) || '');
   const msg  = ((err && err.message) || '').toLowerCase();
+
+  if (msg === 'not-signed-in' || code === '401' || msg.includes('jwt')){
+    return "You're signed out — sign in again and retry.";
+  }
   if (code === '23505' || msg.includes('duplicate key')){
     return "You've already rated this meal — thanks!";
   }
   if (code === '42501' || msg.includes('row-level security') || msg.includes('violates row-level')){
     return "That meal is closed for rating now.";
   }
-  if (msg.includes('jwt') || msg.includes('expired') || code === '401' || code === 401){
-    return "Your session expired — sign in again.";
+  if (code === '23514' || msg.includes('check constraint')){
+    return "The server rejected that — check the mess and meal are right.";
   }
-  return null;   // caller falls back to its own generic message
+  // Unknown. Say what actually happened, and put the whole thing in the console
+  // for anyone who can open one.
+  try{ console.error('[mess] write failed:', err); }catch(e){}
+  const raw = (err && (err.message || err.details || err.hint)) || '';
+  const short = String(raw).slice(0, 110);
+  return short ? `Couldn't save: ${short}` : null;
 }
 
 async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
@@ -3142,7 +3161,7 @@ async function submitFeedback(){
       closeSheet();
       return;
     }
-    showToast(nice || "Couldn't reach the server — try again.");
+    showErrorToast(nice || "Couldn't reach the server — try again.");
     return;
   }
   if (btn) btn.disabled = false;
@@ -3165,12 +3184,21 @@ async function submitFeedback(){
   if (menu === state.mess && day === state.day) renderMain();
 }
 
-function showToast(msg){
+/* `ms` exists because 2.2 seconds is fine for "Thanks — feedback saved!" and far
+   too short for an error someone is meant to read, remember and repeat back. */
+function showToast(msg, ms){
   const t = document.getElementById('toast');
   t.textContent = msg;
+  if (!ms) t.classList.remove('long');
   t.classList.add('show');
   clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), ms || 2200);
+}
+
+function showErrorToast(msg){
+  const t = document.getElementById('toast');
+  if (t) t.classList.toggle('long', (msg || '').length > 46);
+  showToast(msg, 7000);
 }
 
 /* ---------------- TODAY SHORTCUT ---------------- */
@@ -3408,7 +3436,7 @@ async function submitComplaint(){
   }catch(e){
     showSheetLoading('complaintLoading', false);
     if (cbtn) cbtn.disabled = false;
-    showToast(friendlyWriteError(e) || "Couldn't reach the server — try again.");
+    showErrorToast(friendlyWriteError(e) || "Couldn't reach the server — try again.");
     return;
   }
   if (cbtn) cbtn.disabled = false;
