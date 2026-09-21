@@ -3994,14 +3994,28 @@ async function renderYou(){
   const list = await getMySubmissions();
   const ratings = list.filter(x => x.type === 'rating');
   const reports = list.filter(x => x.type === 'complaint');
-  const open    = reports.filter(x => (x.status || 'submitted') !== 'resolved').length;
 
-  if (statsEl){
-    statsEl.innerHTML = `
-      <div class="stat"><div class="n">${ratings.length}</div><div class="l">Meals rated</div></div>
-      <div class="stat"><div class="n">${reports.length}</div><div class="l">Issues reported</div></div>
-      <div class="stat"><div class="n">${open}</div><div class="l">Still open</div></div>`;
-  }
+  // What status to show for a complaint: the committee's answer if we have it,
+  // otherwise whatever was stored locally at submit time.
+  const statusOf = (it, statuses) => {
+    const live = (it.ref && statuses && statuses[it.ref]) || null;
+    return (live && STATUS_LABELS[live.status]) ? live.status : (it.status || 'submitted');
+  };
+
+  // The count and the tab badge have to use the SAME source as the chips below,
+  // or a complaint reads "Resolved" on its card while the tile still calls it open.
+  const paintStats = (statuses) => {
+    const open = reports.filter(x => statusOf(x, statuses) !== 'resolved').length;
+    if (statsEl){
+      statsEl.innerHTML = `
+        <div class="stat"><div class="n">${ratings.length}</div><div class="l">Meals rated</div></div>
+        <div class="stat"><div class="n">${reports.length}</div><div class="l">Issues reported</div></div>
+        <div class="stat"><div class="n">${open}</div><div class="l">Still open</div></div>`;
+    }
+    const b = document.getElementById('youBadge');
+    if (b){ b.hidden = open === 0; b.textContent = open; }
+  };
+  paintStats({});
   // The identity sheet promises this is changeable from here, so it has to be here.
   const idRow = document.getElementById('youIdentity');
   if (idRow){
@@ -4014,8 +4028,6 @@ async function renderYou(){
          <span class="whoami-cta">Add</span>`;
     idRow.hidden = false;
   }
-  const badge = document.getElementById('youBadge');
-  if (badge){ badge.hidden = open === 0; badge.textContent = open; }
 
   if (!list.length){
     body.innerHTML = `<div class="empty">
@@ -4040,7 +4052,7 @@ async function renderYou(){
         </div>`;
       }
       const live = (it.ref && statuses[it.ref]) || null;
-      const status = (live && STATUS_LABELS[live.status]) ? live.status : (it.status || 'submitted');
+      const status = statusOf(it, statuses);
       const note = live && live.note ? live.note : '';
       return `<div class="mysub-item">
         <div class="mysub-top">
@@ -4061,7 +4073,17 @@ async function renderYou(){
   const refs = reports.filter(r => r.ref).map(r => r.ref);
   if (refs.length){
     const statuses = await fetchComplaintStatuses(refs);
-    if (Object.keys(statuses).length) paint(statuses);
+    if (Object.keys(statuses).length){
+      paint(statuses);
+      paintStats(statuses);
+      // Keep the latest known status locally so the count is right offline too,
+      // and so the next paint doesn't start from the stale one again.
+      const updated = list.map(it => (it.ref && statuses[it.ref] && statuses[it.ref].status)
+        ? { ...it, status: statuses[it.ref].status } : it);
+      if (window.storage){
+        try{ await window.storage.set('my_submissions', JSON.stringify(updated), false); }catch(e){ /* non-fatal */ }
+      }
+    }
   }
 }
 
