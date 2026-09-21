@@ -2120,7 +2120,6 @@ let state = {
   mess: "north",
   day: todayName,
   sheetStars: 0,
-  deviceUserId: null,
   feedbackCache: {} // key `${mess}_${day}` -> data object
 };
 
@@ -2975,87 +2974,118 @@ function closeMealSheet(){
 }
 
 // One place to update once the backend is deployed — everything else derives from this.
-const API_BASE = "https://mess-backend-oj2n.onrender.com";
-const RATE_SUBMIT_URL = `${API_BASE}/rate-submit`;
-const COMPLAINT_SUBMIT_URL = `${API_BASE}/complaint-submit`;
+/* The Render service is no longer called. It stays deployed for now as a rollback
+   path, but nothing in this file talks to it — see the write functions below.
 
-// No login system exists yet, so each device gets a persistent anonymous numeric id
-// the first time it submits a rating. Swap this out once real student accounts exist.
-async function getDeviceUserId(){
-  if (state.deviceUserId) return state.deviceUserId;
-  try{
-    if (window.storage){
-      try{
-        const res = await window.storage.get('device_user_id', false);
-        if (res && res.value){ state.deviceUserId = res.value; return state.deviceUserId; }
-      }catch(e){ /* not set yet */ }
-      const fresh = String(Math.floor(100000 + Math.random()*900000));
-      await window.storage.set('device_user_id', fresh, false);
-      state.deviceUserId = fresh;
-      return fresh;
-    }
-  }catch(e){ /* storage unavailable */ }
-  state.deviceUserId = String(Math.floor(100000 + Math.random()*900000));
-  return state.deviceUserId;
+   getDeviceUserId() went with it. A random per-device number was the best identity
+   available when there was no sign-in; it was wrong in both directions, giving two
+   roommates on one phone a single rating between them and one student on a phone
+   and a laptop two. auth.uid() replaces it and is verified rather than invented. */
+
+/* =============== WRITES — straight to Supabase ===============
+
+   These used to POST to a FastAPI service on Render that talked to Supabase with
+   the SERVICE key, which bypasses Row Level Security, behind CORS set to "*". Any
+   page on the internet could write to it, and Pydantic silently dropped every
+   field the model didn't declare — which is why `menu`, `ref`, `roll` and `name`
+   were being sent and never stored.
+
+   Now the browser writes directly, as the signed-in student, and the database
+   decides what is allowed:
+
+     - `student_id = auth.uid()` is checked by the RLS policy, so a row cannot be
+       filed under anyone else's name however the request is built.
+     - `rating_window_open(served_on, meal)` is checked by the same policy, so the
+       12-hour window is enforced where it cannot be edited.
+     - a unique index on (student_id, hall, menu, served_on, meal) makes
+       one-rating-per-person real rather than a localStorage flag.
+
+   `served_on` is the field all of that hangs off. The app has always known it —
+   it is the `dateISO` already in the form — and has never sent it. A weekday name
+   cannot identify WHICH Sunday lunch, so without it none of the rules above can
+   be written down. */
+
+function requireSession(){
+  if (!sb || !session || !session.user) throw new Error('not-signed-in');
+  return session.user;
 }
 
-// `mess` here is the physical hall (g/ab/cd) — kept under the same field name the backend
-// already expects. `menu` (north/south) is a new field; if the backend validates its payload
-// strictly, it'll need updating to accept it.
-// NOTE FOR THE BACKEND: `roll` and `name` are new fields, sent with every submission.
-// `roll` is what makes the once-per-meal rule enforceable server-side — a unique index on
-// (roll, mess, menu, day, meal) is the only version of that rule that actually holds,
-// since everything the client checks is checkable only against data the client supplied.
-async function postToLocalServer(userId, rating, comment, mess, menu, day, meal){
-  const res = await fetch(RATE_SUBMIT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      user_id: userId, score: String(rating), comment: comment || "", mess, menu, day, meal,
-      roll: identity ? identity.roll : "", name: identity ? identity.name : ""
-    })
-  });
-  if (!res.ok) throw new Error("Server responded with " + res.status);
+/* Postgres speaks in codes. Turn the three a student can actually cause into
+   something that reads like an answer rather than a stack trace. */
+function friendlyWriteError(err){
+  const code = (err && (err.code || err.status)) || '';
+  const msg  = ((err && err.message) || '').toLowerCase();
+  if (code === '23505' || msg.includes('duplicate key')){
+    return "You've already rated this meal — thanks!";
+  }
+  if (code === '42501' || msg.includes('row-level security') || msg.includes('violates row-level')){
+    return "That meal is closed for rating now.";
+  }
+  if (msg.includes('jwt') || msg.includes('expired') || code === '401' || code === 401){
+    return "Your session expired — sign in again.";
+  }
+  return null;   // caller falls back to its own generic message
 }
 
-async function postComplaintToServer(mess, comment, photoDataUrl, ref){
-  const res = await fetch(COMPLAINT_SUBMIT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      mess, comment, photo: photoDataUrl || null, ref,
-      roll: identity ? identity.roll : "", name: identity ? identity.name : ""
-    })
+async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
+  const user = requireSession();
+  const { error } = await sb.from('ratings').insert({
+    student_id: user.id,
+    roll:       identity ? identity.roll : null,
+    full_name:  identity ? identity.name : null,
+    hall, menu, meal,
+    served_on:  dateISO,        // the field that makes every rule enforceable
+    day,                        // kept so the table stays readable at a glance
+    score:      rating,
+    comment:    comment || null
   });
-  if (!res.ok) throw new Error("Server responded with " + res.status);
+  if (error) throw error;
+}
+
+async function postComplaint({ hall, comment, ref }){
+  const user = requireSession();
+  const { error } = await sb.from('complaints').insert({
+    student_id: user.id,
+    roll:       identity ? identity.roll : null,
+    full_name:  identity ? identity.name : null,
+    hall,
+    comment,
+    ref,                        // now actually stored — the reference number the
+    served_on:  todayISO(),     // student is shown has never referred to anything
+    status:     'submitted'
+  });
+  if (error) throw error;
 }
 
 /* ---------------- COMPLAINT STATUS (mess committee → student) ----------------
-   Expects an endpoint the committee's tooling updates:
-
-     GET  {API_BASE}/complaint-status?refs=PSG-AAA-1,PSG-BBB-2
-     ->   { "PSG-AAA-1": { "status": "reviewing", "note": "Warden informed" },
-            "PSG-BBB-2": { "status": "resolved",  "note": "New batch of rice from Monday" } }
-
-   status is one of: submitted | reviewing | resolved. `note` is optional free text.
-   Until that endpoint exists this fails quietly and every complaint just reads "Submitted". */
-const COMPLAINT_STATUS_URL = `${API_BASE}/complaint-status`;
+   The committee sets `status` and `committee_note` on the row in Supabase's Table
+   Editor — that dashboard bypasses RLS, so it needs no admin page building for it.
+   status is one of: submitted | reviewing | resolved. */
 // Glyphs as well as colour, so the three states are still distinguishable at 9.5px
 // and for anyone who can't separate the amber from the green.
 const STATUS_LABELS = { submitted:'○ Submitted', reviewing:'◐ Being looked at', resolved:'✓ Resolved' };
 
+/* Read straight from the table. The endpoint this used to call never existed, so
+   every complaint has always read "Submitted" no matter what the committee did.
+
+   No refs filter is needed for safety: the `complaints_read_own` policy already
+   restricts a student to their own rows, so the worst a tampered request can do
+   is return fewer rows. The `.in()` is there to keep the response small. */
 async function fetchComplaintStatuses(refs){
-  if (!refs.length) return {};
+  if (!refs.length || !sb || !session) return {};
   try{
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);   // never hang the sheet on a sleeping server
-    const res = await fetch(`${COMPLAINT_STATUS_URL}?refs=${encodeURIComponent(refs.join(','))}`, { signal: ctrl.signal });
-    clearTimeout(timer);
-    if (!res.ok) return {};
-    const data = await res.json();
-    return (data && typeof data === 'object') ? data : {};
+    const { data, error } = await sb
+      .from('complaints')
+      .select('ref,status,committee_note')
+      .in('ref', refs);
+    if (error || !data) return {};
+    const out = {};
+    data.forEach(r => {
+      if (r.ref) out[r.ref] = { status: r.status || 'submitted', note: r.committee_note || '' };
+    });
+    return out;
   }catch(e){
-    return {};  // endpoint not built yet, offline, or slow — fall back to the locally stored status
+    return {};  // offline, or the session lapsed — keep the locally stored status
   }
 }
 
@@ -3094,15 +3124,28 @@ async function submitFeedback(){
 
   showSheetLoading('feedbackLoading', true);
 
-  // Primary action: send to the local rating server. This must succeed for the submit to count.
+  // The write must succeed for the submit to count. The database is now the thing
+  // that decides — the checks above only save a student the round trip.
+  const btn = document.querySelector('#sheet .submit');
+  if (btn) btn.disabled = true;           // the 4-inserts-in-522ms complaint was a double tap
   try{
-    const userId = await getDeviceUserId();
-    await withMinLoadingTime(postToLocalServer(userId, rating, comment, hall, menu, day, meal), 500);
+    await withMinLoadingTime(postRating({ rating, comment, hall, menu, day, meal, dateISO }), 500);
   }catch(e){
     showSheetLoading('feedbackLoading', false);
-    showToast("Couldn't reach the server — try again.");
+    if (btn) btn.disabled = false;
+    const nice = friendlyWriteError(e);
+    if (nice === "You've already rated this meal — thanks!"){
+      // The database just told us something this device did not know — most likely
+      // the same student rating from another phone. Record it so it stops asking.
+      await markRated(mess, dateISO, meal);
+      showToast(nice);
+      closeSheet();
+      return;
+    }
+    showToast(nice || "Couldn't reach the server — try again.");
     return;
   }
+  if (btn) btn.disabled = false;
 
   await markRated(mess, dateISO, meal);
 
@@ -3358,14 +3401,17 @@ async function submitComplaint(){
   const ref = newComplaintRef();
   showSheetLoading('complaintLoading', true);
 
-  // Primary action: send to the backend. This must succeed for the submit to count.
+  const cbtn = document.querySelector('#complaintSheet .submit');
+  if (cbtn) cbtn.disabled = true;
   try{
-    await withMinLoadingTime(postComplaintToServer(mess, comment, complaintPhotoData, ref), 500);
+    await withMinLoadingTime(postComplaint({ hall: mess, comment, ref }), 500);
   }catch(e){
     showSheetLoading('complaintLoading', false);
-    showToast("Couldn't reach the server — try again.");
+    if (cbtn) cbtn.disabled = false;
+    showToast(friendlyWriteError(e) || "Couldn't reach the server — try again.");
     return;
   }
+  if (cbtn) cbtn.disabled = false;
 
   // Secondary: best-effort local cache, powers "My submissions" and the shared in-app view if present.
   if (window.storage){

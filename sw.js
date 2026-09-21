@@ -8,7 +8,7 @@
 
    Bump CACHE_VERSION whenever you deploy, or returning users keep the old shell until
    their browser happens to revalidate. */
-const CACHE_VERSION = 'v20';
+const CACHE_VERSION = 'v21';
 const CACHE_NAME = `psg-mess-${CACHE_VERSION}`;
 
 // Relative, not absolute. If this is ever served from a sub-path (GitHub Pages puts
@@ -31,8 +31,10 @@ const SHELL = [
   './icon-maskable-512.png'
 ];
 
-// Ratings and complaints must always hit the network — never serve a cached answer.
-const API_HOST = 'mess-backend-oj2n.onrender.com';
+// Ratings, complaints and auth must always hit the network — never serve a cached
+// answer. Supabase is cross-origin, so the handler below already leaves it alone;
+// this stays as a named, explicit exclusion rather than an accident of origin.
+const API_HOST = 'ryxpakwvkeddixwjsono.supabase.co';
 
 self.addEventListener('install', event => {
   event.waitUntil(
