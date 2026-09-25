@@ -8,7 +8,7 @@
 
    Bump CACHE_VERSION whenever you deploy, or returning users keep the old shell until
    their browser happens to revalidate. */
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v26';
 const CACHE_NAME = `psg-mess-${CACHE_VERSION}`;
 
 // Relative, not absolute. If this is ever served from a sub-path (GitHub Pages puts

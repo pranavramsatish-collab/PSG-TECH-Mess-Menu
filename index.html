@@ -3046,9 +3046,46 @@ function friendlyWriteError(err){
   return short ? `Couldn't save: ${short}` : null;
 }
 
+/* ---------------- INSERTING INTO A TABLE THAT IS STILL MOVING ----------------
+   Two of the columns below exist only to keep an older shape of the table happy:
+   `ratings.user_id` and `complaints.mess` were NOT NULL before the migration, so
+   the app fills them rather than leaving a row it cannot write.
+
+   The catch is that once those columns are finally dropped, sending them fails
+   just as hard — PostgREST answers PGRST204, "Could not find the 'mess' column
+   of 'complaints' in the schema cache", and the student loses their complaint
+   over a column nothing actually needs.
+
+   So a legacy column is best-effort: if the table says it is gone, drop it from
+   the payload and send again. Anything the row genuinely depends on is NOT on
+   this list — if `comment` or `score` goes missing that is a real problem and
+   the error should surface instead of being silently papered over. */
+const LEGACY_COLUMNS = ['mess', 'user_id', 'day', 'full_name', 'roll'];
+
+function missingColumn(err){
+  if (String((err && err.code) || '') !== 'PGRST204') return null;
+  const m = /'([^']+)' column/.exec((err && err.message) || '');
+  return m ? m[1] : null;
+}
+
+async function insertRow(table, row){
+  const payload = Object.assign({}, row);
+  for (let attempt = 0; attempt <= LEGACY_COLUMNS.length; attempt++){
+    const { error } = await sb.from(table).insert(payload);
+    if (!error) return;
+    const col = missingColumn(error);
+    // Not a missing column, not one we're allowed to drop, or not one we sent:
+    // nothing useful left to try.
+    if (!col || LEGACY_COLUMNS.indexOf(col) === -1 || !(col in payload)) throw error;
+    try{ console.warn(`[mess] ${table}.${col} no longer exists — retrying without it`); }catch(e){}
+    delete payload[col];
+  }
+  throw new Error('schema-mismatch');
+}
+
 async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
   const user = requireSession();
-  const { error } = await sb.from('ratings').insert({
+  await insertRow('ratings', {
     // `user_id` is NOT NULL on the live table — a fact the local replica used to
     // develop the migration got wrong, so dropping it here failed every insert
     // with a constraint violation. It holds the same value as student_id now
@@ -3064,18 +3101,16 @@ async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
     score:      rating,
     comment:    comment || null
   });
-  if (error) throw error;
 }
 
 async function postComplaint({ hall, comment, ref }){
   const user = requireSession();
-  const { error } = await sb.from('complaints').insert({
-    // Same story as ratings.user_id: `mess` is NOT NULL on the live table. It is
-    // also the column that carried two different meanings — 10 rows say
-    // north/south, 3 say g/ab — which is why `hall` exists. Writing the hall into
-    // both keeps the constraint satisfied without adding a fourteenth row of
-    // ambiguity; `hall` is the one to read.
-    mess:       hall,
+  await insertRow('complaints', {
+    // `mess` is gone — dropped from the table on 2026-09-22, which is the end
+    // state the migration was aiming at. It carried two different meanings (10
+    // rows saying north/south, 3 saying g/ab) and `hall` replaced it, backfilled
+    // from it first. So nothing is written here for it; insertRow() would strip
+    // it anyway, but not sending it saves a round trip and a 400 in the console.
     student_id: user.id,
     roll:       identity ? identity.roll : null,
     full_name:  identity ? identity.name : null,
@@ -3085,7 +3120,6 @@ async function postComplaint({ hall, comment, ref }){
     served_on:  todayISO(),     // student is shown has never referred to anything
     status:     'submitted'
   });
-  if (error) throw error;
 }
 
 /* ---------------- COMPLAINT STATUS (mess committee → student) ----------------
