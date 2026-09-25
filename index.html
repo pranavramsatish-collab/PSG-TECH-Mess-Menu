@@ -2265,15 +2265,23 @@ async function initMenuPref(){
   }catch(e){ /* no saved preference yet */ }
 }
 
-/* ---------------- RENDER: MEAL CARDS ---------------- */
+/* ---------------- RENDER: MEAL CARDS ----------------
+   renderMain is async and is called from several places — boot, the day rail,
+   the mess toggle, afterSignIn, and the averages fetch when it lands. Two runs
+   overlapping used to produce EIGHT meal cards: each cleared the container,
+   each awaited, and each then appended its own four. The sequence number makes
+   the last caller win, and the cards are built into a fragment so the swap is
+   one operation with nothing half-rendered in between. */
+let renderMainSeq = 0;
 async function renderMain(){
+  const seq = ++renderMainSeq;
   const mess = MENU[state.mess];
   // Never let a bad state.day throw here. renderMain() paints the whole Week view, so an
   // unrecognised day name would blank the tab rather than degrade.
   if (!mess.days[state.day]) state.day = todayName;
   const dayData = mess.days[state.day];
   const main = document.getElementById('main');
-  main.innerHTML = "";
+  const frag = document.createDocumentFragment();
 
   const fb = await getFeedback(state.mess, state.day); // {breakfast:[{rating,comment,ts}], ...}
   // The date on the rail IS the date being rated. No quiet remapping to last week.
@@ -2408,8 +2416,13 @@ async function renderMain(){
     } else {
       btn.onclick = () => openSheet(key);
     }
-    main.appendChild(card);
+    frag.appendChild(card);
   });
+
+  // A newer render started while this one was awaiting storage — drop this
+  // one rather than painting a day the student has already scrolled past.
+  if (seq !== renderMainSeq) return;
+  main.replaceChildren(frag);
 }
 
 /* ---------------- STORAGE ---------------- */
