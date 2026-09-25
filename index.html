@@ -688,8 +688,39 @@ a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
 .install{
   display:none; align-items:center; gap:13px; padding:15px 17px; margin-bottom:16px;
   background:var(--accent-soft); border:1px solid var(--accent-line); border-radius:var(--r-lg);
+  flex-wrap:wrap;
 }
 .install.show{ display:flex; }
+/* On iOS there is no install API, so this row is the instructions. It LOOKS
+   like a button — bordered, tinted, sat on its own — so it has to behave like
+   one: tapping it opens the steps instead of doing nothing, which is what it
+   did before and what got reported as a bug. */
+.install.tappable{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.install.tappable:active{ background:rgba(231,169,60,.2); }
+.install .chev{
+  flex:none; color:var(--accent); transition:transform .25s;
+}
+.install.open .chev{ transform:rotate(180deg); }
+.install-steps{ flex-basis:100%; margin-top:13px; padding-top:13px;
+                border-top:1px solid var(--accent-line); }
+.install-steps ol{ margin:0; padding-left:0; list-style:none; counter-reset:s; }
+.install-steps li{
+  counter-increment:s; position:relative; padding-left:30px; margin-bottom:11px;
+  font-size:13.5px; color:var(--muted); line-height:1.55;
+}
+.install-steps li:last-child{ margin-bottom:0; }
+.install-steps li::before{
+  content:counter(s); position:absolute; left:0; top:1px;
+  width:20px; height:20px; border-radius:50%; background:var(--accent);
+  color:var(--on-accent); font-size:11px; font-weight:700;
+  display:grid; place-items:center;
+}
+.install-steps b{ color:var(--ink); font-weight:600; }
+.install-steps .shareico{
+  display:inline-flex; vertical-align:-4px; margin:0 3px;
+  width:17px; height:17px; color:var(--accent);
+}
+.install-steps .tail{ margin-top:11px; font-size:12.5px; color:var(--faint); }
 .install-b{ flex:1; min-width:0; }
 .install-b b{ display:block; font-size:14px; font-weight:600; }
 .install-b span{ font-size:12.5px; color:var(--muted); }
@@ -1301,8 +1332,9 @@ textarea::placeholder{ color:var(--faint); }
     <span class="li-ico">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </span>
-    <span class="install-b"><b>Add to home screen</b><span>Opens instantly, works offline</span></span>
-    <button onclick="installApp()">Install</button>
+    <span class="install-b"><b>Add to home screen</b><span id="installSub">Opens instantly, works offline</span></span>
+    <button id="installBtn" onclick="installApp()">Install</button>
+    <div class="install-steps" id="installSteps" hidden></div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
@@ -4247,33 +4279,110 @@ async function renderYou(){
   }
 }
 
-/* ================= ADD TO HOME SCREEN ================= */
+/* ================= ADD TO HOME SCREEN =================
+
+   Only Chromium has an install API. Safari has none and never will have this
+   one, so on an iPhone this row cannot install anything — it can only explain.
+
+   The trap, reported from a real iPhone: the row was explaining, in a subtitle,
+   on a tinted bordered card that reads as a button. Tapping it did nothing,
+   because text does nothing. A row that looks tappable must be tappable, so on
+   every platform without the API the whole row opens the steps. */
 let deferredInstall = null;
+
+function isStandalone(){
+  try{
+    return window.navigator.standalone === true ||
+           window.matchMedia('(display-mode: standalone)').matches;
+  }catch(e){ return false; }
+}
+// iPadOS 13+ reports a DESKTOP user agent, so the usual /ipad/ test is false on
+// an actual iPad. Touch points are what still give it away.
+function isIOSLike(){
+  const ua = navigator.userAgent || '';
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  return /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+}
+
+const SHARE_SVG = '<svg class="shareico" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+  + '<path d="M12 3v13m0-13 4 4m-4-4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+  + '<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+function installStepsHtml(){
+  if (isIOSLike()){
+    return `<ol>
+      <li>Tap the <b>Share</b> button ${SHARE_SVG} at the bottom of the screen.</li>
+      <li>Scroll down the list and tap <b>Add to Home Screen</b>.</li>
+      <li>Tap <b>Add</b>, top right.</li>
+    </ol>
+    <div class="tail">If you don't see Share, you're not in Safari — open the site in Safari first.</div>`;
+  }
+  return `<ol>
+    <li>Tap the <b>⋮</b> menu, top right of the browser.</li>
+    <li>Tap <b>Install app</b>, or <b>Add to Home screen</b>.</li>
+    <li>Confirm with <b>Install</b>.</li>
+  </ol>`;
+}
+
+function toggleInstallSteps(){
+  const bar = document.getElementById('installBar');
+  const box = document.getElementById('installSteps');
+  if (!bar || !box) return;
+  const open = bar.classList.toggle('open');
+  box.hidden = !open;
+  if (open && !box.innerHTML) box.innerHTML = installStepsHtml();
+  haptic(6);
+}
+
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstall = e;
   const bar = document.getElementById('installBar');
-  if (bar) bar.classList.add('show');
+  const sub = document.getElementById('installSub');
+  const btn = document.getElementById('installBtn');
+  if (sub) sub.textContent = 'Opens instantly, works offline';
+  if (btn){ btn.hidden = false; btn.textContent = 'Install'; }
+  if (bar){ bar.classList.add('show'); bar.classList.remove('tappable'); }
 });
+
 async function installApp(){
-  if (!deferredInstall) return;
-  deferredInstall.prompt();
-  await deferredInstall.userChoice;
-  deferredInstall = null;
-  const bar = document.getElementById('installBar');
-  if (bar) bar.classList.remove('show');
+  // The real prompt, when the browser gave us one.
+  if (deferredInstall){
+    try{
+      deferredInstall.prompt();
+      await deferredInstall.userChoice;
+    }catch(e){ /* already used, or dismissed */ }
+    deferredInstall = null;
+    const bar = document.getElementById('installBar');
+    if (bar) bar.classList.remove('show');
+    return;
+  }
+  // No prompt available. Never return silently — that is the bug this replaces.
+  toggleInstallSteps();
 }
-// iOS gives no install event at all, so tell Safari users how to do it manually.
-(function iosInstallHint(){
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-  if (!isIOS || standalone) return;
+
+(function manualInstallRow(){
   const bar = document.getElementById('installBar');
-  if (!bar) return;
-  bar.querySelector('.install-b').innerHTML = '<b>Add to home screen</b><span>Tap Share, then "Add to Home Screen"</span>';
-  const btn = bar.querySelector('button');
-  if (btn) btn.remove();
-  bar.classList.add('show');
+  if (!bar || isStandalone()) return;      // already installed: say nothing
+  if (!isIOSLike()) return;                // Chromium waits for the real event
+  const sub = document.getElementById('installSub');
+  const btn = document.getElementById('installBtn');
+  if (sub) sub.textContent = 'Two taps in Safari — here’s how';
+  if (btn) btn.hidden = true;
+  // Before the steps box, not at the end of the row: the row wraps, and
+  // appended-last puts the chevron on its own line under the text.
+  const steps = document.getElementById('installSteps');
+  const chev = '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+    + '<path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  if (steps) steps.insertAdjacentHTML('beforebegin', chev);
+  else bar.insertAdjacentHTML('beforeend', chev);
+  bar.classList.add('show', 'tappable');
+  bar.setAttribute('role', 'button');
+  bar.setAttribute('tabindex', '0');
+  bar.addEventListener('click', toggleInstallSteps);
+  bar.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleInstallSteps(); }
+  });
 })();
 
 /* ================= INIT ================= */
