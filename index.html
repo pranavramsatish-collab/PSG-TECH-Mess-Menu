@@ -1755,6 +1755,11 @@ async function afterSignIn(){
   hideLock();
   renderWhoami();
   renderAccount();
+  // The menu is painted behind the lock screen, before there is a session — so
+  // the star averages could not have been fetched yet. Repaint now that there
+  // is someone to fetch them as, or the cards keep saying "you" until the
+  // student happens to change day or mess.
+  renderMain();
   if (!identity || !identity.roll){
     // Give the lock screen time to fade before another panel slides up.
     setTimeout(() => openIdentity(), 420);
@@ -2275,14 +2280,25 @@ async function renderMain(){
   const mappedDateISO = isoOfThisWeek(state.day);
   const combos = await getRatedCombos();
 
-  // Which meal of this day rates best so far? Only meaningful once a couple of ratings exist.
-  let bestMeal = null, bestAvg = 0;
+  ensureMealRatings(state.mess, mappedDateISO);   // not awaited: paint first
+
+  // Which meal of this day rates best? Prefer the hostel's answer; fall back to
+  // this student's own ratings, and say which one is being shown — "best today"
+  // and "your best today" are different claims and must not be confused.
+  let bestMeal = null, bestAvg = 0, bestIsShared = false;
   MEAL_KEYS.forEach(k => {
-    const e = (fb && fb[k]) || [];
-    if (!e.length) return;
-    const avg = e.reduce((s,x)=>s+x.rating,0)/e.length;
-    if (avg > bestAvg){ bestAvg = avg; bestMeal = k; }
+    const mr = mealRatings[mrKey(state.mess, mappedDateISO, k)];
+    if (!mr || mr.count < MIN_RATINGS) return;
+    if (mr.avg > bestAvg){ bestAvg = mr.avg; bestMeal = k; bestIsShared = true; }
   });
+  if (!bestIsShared){
+    MEAL_KEYS.forEach(k => {
+      const e = (fb && fb[k]) || [];
+      if (!e.length) return;
+      const avg = e.reduce((s,x)=>s+x.rating,0)/e.length;
+      if (avg > bestAvg){ bestAvg = avg; bestMeal = k; }
+    });
+  }
 
   MEAL_KEYS.forEach(key => {
     const items = dayData[key];
@@ -2290,33 +2306,55 @@ async function renderMain(){
     card.className = 'meal';
     card.style.animationDelay = (MEAL_KEYS.indexOf(key) * 60) + 'ms';
 
-    // IMPORTANT: `entries` comes from this device's own storage, not the backend. Until
-    // GET /meal-ratings exists there is no shared data, so every label here has to say
-    // "you". A bare "★ 4.0 · 1" reads as a community score, which is the one thing this
-    // screen must not imply — a student would be looking at their own rating played back
-    // to them and believing it was the hostel's verdict. When the endpoint lands, swap
-    // the source and these labels go back to "what people said".
+    // Two possible sources, and the label always names the one in use.
+    //   `shared`  — the hostel's average, once MIN_RATINGS students have rated it
+    //   `entries` — this device's own ratings, the only thing there used to be
+    // Falling back to "you" below the threshold is the whole point: a single
+    // score shown bare reads as a verdict, and the student reading it is usually
+    // the person who gave it.
     const entries = (fb && fb[key]) || [];
-    let avgHtml = '';
-    if (entries.length){
-      const avg = (entries.reduce((s,e)=>s+e.rating,0)/entries.length).toFixed(1);
-      avgHtml = `<div class="avg mine" title="Your own rating — shared ratings aren't live yet">★ ${avg} <span class="avg-who">you</span></div>`;
-    }
-    // "Best today" compared across YOUR ratings only — same caveat, so it says so.
-    const ratedMealCount = MEAL_KEYS.filter(k => ((fb && fb[k]) || []).length).length;
-    const bestHtml = (key === bestMeal && ratedMealCount > 1 && bestAvg >= 3.5)
-      ? `<span class="best">★ your best today</span>` : '';
+    const shared  = mealRatings[mrKey(state.mess, mappedDateISO, key)];
+    const haveShared = !!(shared && shared.count >= MIN_RATINGS);
 
-    // Your own notes, played back so feedback doesn't vanish into the void once submitted.
+    let avgHtml = '';
+    if (haveShared){
+      avgHtml = `<div class="avg" title="Average of ${shared.count} ratings from students">★ ${shared.avg.toFixed(1)} <span class="avg-who">${shared.count} rating${shared.count>1?'s':''}</span></div>`;
+    } else if (entries.length){
+      const avg = (entries.reduce((s,e)=>s+e.rating,0)/entries.length).toFixed(1);
+      avgHtml = `<div class="avg mine" title="Your own rating. Not enough students have rated this meal yet to show an average.">★ ${avg} <span class="avg-who">you</span></div>`;
+    }
+
+    const ratedMealCount = bestIsShared
+      ? MEAL_KEYS.filter(k => { const m = mealRatings[mrKey(state.mess, mappedDateISO, k)];
+                                return m && m.count >= MIN_RATINGS; }).length
+      : MEAL_KEYS.filter(k => ((fb && fb[k]) || []).length).length;
+    const bestHtml = (key === bestMeal && ratedMealCount > 1 && bestAvg >= 3.5)
+      ? `<span class="best">★ ${bestIsShared ? 'best today' : 'your best today'}</span>` : '';
+
+    // What people wrote. Other students' comments carry no name — and when there
+    // are none, the student's own notes are played back as before, so submitting
+    // feedback never feels like shouting into a void.
+    const sharedComments = (mealComments[mrKey(state.mess, mappedDateISO, key)] || [])
+      .filter(c => c.comment && c.comment.trim()).slice(0, 2);
     const withComments = entries.filter(e => e.comment && e.comment.trim())
                                 .sort((a,b) => b.ts - a.ts)
                                 .slice(0, 2);
-    const commentsHtml = withComments.length ? `
+    let commentsHtml = '';
+    if (sharedComments.length){
+      commentsHtml = `
+      <div class="says">
+        <div class="sh">What students said</div>
+        ${sharedComments.map(c => `<div class="sl"><span class="st">${'★'.repeat(Math.max(1, Math.min(5, c.score||0)))}</span> ${escapeHtml(c.comment.trim())}</div>`).join('')}
+        <div class="sn">Comments are shown without names.</div>
+      </div>`;
+    } else if (withComments.length){
+      commentsHtml = `
       <div class="says">
         <div class="sh">What you said</div>
         ${withComments.map(e => `<div class="sl"><span class="st">${'★'.repeat(e.rating)}</span> ${escapeHtml(e.comment.trim())}</div>`).join('')}
-        <div class="sn">Only you can see this. Ratings from other students aren't live yet.</div>
-      </div>` : '';
+        <div class="sn">Only you can see this. Nobody else has commented on this meal yet.</div>
+      </div>`;
+    }
 
     const commonNote = mess.common[key] ? `<div class="note">${mess.common[key]}</div>` : '';
     // Say what the filter removed rather than removing it silently — otherwise a student
@@ -3120,6 +3158,81 @@ async function postComplaint({ hall, comment, ref }){
     served_on:  todayISO(),     // student is shown has never referred to anything
     status:     'submitted'
   });
+}
+
+/* ---------------- WHAT THE HOSTEL THOUGHT (the real averages) ----------------
+   Until now the star on a meal card was the student's OWN rating played back —
+   labelled "you" precisely so nobody mistook it for a verdict. `meal_ratings`
+   is the view that replaces it: one row per (menu style, date, meal) with an
+   average and a count, readable by any signed-in student.
+
+   Grouped by MENU STYLE, not by hall, and that is deliberate: `MENU` in this
+   file is keyed north/south only, so Monday lunch north is the same food in G,
+   AB and CD. Splitting the average three ways would thin the data to nothing
+   and imply a difference in the food that does not exist. The hall matters for
+   complaints, where the problem is the room.
+
+   An average of one is not an average. Below MIN_RATINGS the card keeps saying
+   "you", because one person's score dressed up as the hostel's verdict is worse
+   than no number at all. This threshold is also why nothing needs redeploying
+   as students arrive — each meal flips over on its own the moment enough
+   people have rated it. */
+const MIN_RATINGS = 3;
+
+// "menu|served_on|meal" -> {avg, count}, or null meaning "asked, nothing there".
+// The null matters: without it an unrated meal is refetched on every repaint.
+let mealRatings  = {};
+let mealComments = {};
+function mrKey(menu, servedOn, meal){ return menu + '|' + servedOn + '|' + meal; }
+
+async function fetchMealRatings(menu, dates){
+  const { data, error } = await sb.from('meal_ratings')
+    .select('menu,served_on,meal,avg_score,rating_count')
+    .eq('menu', menu).in('served_on', dates);
+  if (error || !data) return;
+  data.forEach(r => {
+    mealRatings[mrKey(r.menu, r.served_on, r.meal)] =
+      { avg: Number(r.avg_score), count: Number(r.rating_count) };
+  });
+}
+
+// Comments carry no name and no student_id — the view does not expose them, and
+// this only ever asks for the four columns below. A student writing "the dal was
+// cold" should not be identifiable to the person who cooked it.
+async function fetchMealComments(menu, dates){
+  const { data, error } = await sb.from('meal_comments')
+    .select('menu,served_on,meal,score,comment')
+    .eq('menu', menu).in('served_on', dates).limit(60);
+  if (error || !data) return;
+  data.forEach(r => {
+    const k = mrKey(r.menu, r.served_on, r.meal);
+    (mealComments[k] = mealComments[k] || []).push({ score: r.score, comment: r.comment });
+  });
+}
+
+let ratingsFetchInFlight = false;
+/* Paint first, refresh second. Awaiting the network before the menu appears
+   would hold the whole day's food behind a request that fails on hostel wifi,
+   so the card renders from what is already known and repaints only if the
+   answer actually changed. */
+async function ensureMealRatings(menu, dateISO){
+  if (!sb || !session || ratingsFetchInFlight) return;
+  const keys = MEAL_KEYS.map(m => mrKey(menu, dateISO, m));
+  if (keys.every(k => k in mealRatings)) return;        // already asked for this day
+  ratingsFetchInFlight = true;
+  const before = JSON.stringify(keys.map(k => mealRatings[k] || null));
+  try{
+    await fetchMealRatings(menu, [dateISO]);
+    await fetchMealComments(menu, [dateISO]);
+    keys.forEach(k => { if (!(k in mealRatings)) mealRatings[k] = null; });
+  }catch(e){
+    // Offline, or signed out mid-session. Leave the cache alone so the next
+    // render tries again rather than caching "nothing there" from a failure.
+    ratingsFetchInFlight = false;
+    return;
+  }
+  ratingsFetchInFlight = false;
+  if (JSON.stringify(keys.map(k => mealRatings[k] || null)) !== before) renderMain();
 }
 
 /* ---------------- COMPLAINT STATUS (mess committee → student) ----------------
