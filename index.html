@@ -633,6 +633,29 @@ a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
 .rate-btn.locked{ opacity:.5; cursor:not-allowed; border-style:dashed; }
 .rate-btn.rated{ cursor:default; border-color:var(--accent-line); color:var(--accent-deep); background:var(--accent-tint); }
 
+/* Deliberately quiet — a link, not a button. It sits under every meal card, so
+   at button weight it would compete with "Rate this lunch" on four cards a day
+   and make the screen look like a form. Someone who notices the menu is wrong
+   is looking for this; nobody else should have to see it. */
+.menu-wrong{
+  display:block; margin:9px auto 0; padding:4px 8px; cursor:pointer;
+  background:none; border:0; color:var(--faint);
+  font-family:'Work Sans',sans-serif; font-size:12px; text-decoration:underline;
+  text-underline-offset:3px; transition:color .18s ease;
+}
+.menu-wrong:hover, .menu-wrong:focus-visible{ color:var(--accent); }
+
+/* The read-back line inside the feedback sheet: what this report is about,
+   shown so nobody wonders whether the app knows which day they meant. */
+.fb-context{
+  display:flex; align-items:center; gap:9px; margin-bottom:12px;
+  padding:11px 13px; border-radius:var(--r-md);
+  background:var(--accent-tint); border:1px solid var(--accent-line);
+  font-size:13.5px; color:var(--ink);
+}
+.fb-context b{ font-weight:600; }
+.fb-context .ico{ flex:none; color:var(--accent); }
+
 /* ---------- You view ---------- */
 .stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px; }
 .stat{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:16px 12px; text-align:center; box-shadow:var(--sh-sm); }
@@ -685,9 +708,42 @@ a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
 .step-b b{ display:block; font-size:14.5px; font-weight:600; margin-bottom:3px; }
 .step-b p{ font-size:13.5px; color:var(--muted); line-height:1.55; }
 
+/* The loudest thing on this screen, on purpose.
+
+   It shares the page with the install row, and two accent-tinted cards stacked
+   compete rather than rank. So the hierarchy is carried by the ICON, not by
+   more colour: this one's is filled solid, the install row's is a tint. Filled
+   beats tinted at a glance, and the eye lands here first without either card
+   having to shout.
+
+   It also earns the stronger treatment — the install row disappears once the
+   app is on the home screen, while this one is useful forever. */
+.feedback-row{
+  display:flex; width:100%; align-items:center; gap:13px; text-align:left;
+  padding:16px 17px; margin-bottom:16px; cursor:pointer;
+  background:linear-gradient(135deg, rgba(231,169,60,.15), rgba(231,169,60,.06));
+  border:1px solid var(--accent-line);
+  border-radius:var(--r-lg); color:var(--ink);
+  font-family:'Work Sans',sans-serif;
+  box-shadow:0 4px 18px rgba(231,169,60,.10);
+  transition:box-shadow .2s ease, border-color .2s ease, transform .1s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.feedback-row:active{ transform:scale(.99); }
+.feedback-row:hover, .feedback-row:focus-visible{
+  border-color:var(--accent); box-shadow:0 6px 24px rgba(231,169,60,.20);
+}
+/* Filled, where every other row on this screen has a tinted one. */
+.feedback-row .li-ico{ background:var(--accent); color:var(--on-accent); }
+.feedback-row .install-b b{ font-size:15px; }
+.feedback-row .chev{ flex:none; color:var(--accent); }
+
+/* Stepped down from accent-soft to the plain surface, so the feedback row
+   above it is unambiguously the first thing you see. Still perfectly visible —
+   it just stopped competing. */
 .install{
   display:none; align-items:center; gap:13px; padding:15px 17px; margin-bottom:16px;
-  background:var(--accent-soft); border:1px solid var(--accent-line); border-radius:var(--r-lg);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-lg);
   flex-wrap:wrap;
 }
 .install.show{ display:flex; }
@@ -696,7 +752,7 @@ a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
    one: tapping it opens the steps instead of doing nothing, which is what it
    did before and what got reported as a bug. */
 .install.tappable{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
-.install.tappable:active{ background:rgba(231,169,60,.2); }
+.install.tappable:active{ background:var(--accent-tint); }
 .install .chev{
   flex:none; color:var(--accent); transition:transform .25s;
 }
@@ -1328,6 +1384,17 @@ textarea::placeholder{ color:var(--faint); }
     </button>
   </div>
 
+  <!-- Sits above the install row because it is the thing a student is more
+       likely to have come to More looking for. -->
+  <button type="button" class="feedback-row" onclick="openFeedback('menu', null)">
+    <span class="li-ico">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="install-b"><b>Tell us something</b><span>Menu wrong, app broken, or an idea</span></span>
+    <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="transform:rotate(-90deg)">
+      <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
   <div class="install" id="installBar">
     <span class="li-ico">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1566,6 +1633,48 @@ textarea::placeholder{ color:var(--faint); }
     </div>
     <div class="loading-text" id="complaintLoadingText">Sending it over…</div>
     <div class="loading-sub" id="complaintLoadingSub"></div>
+  </div>
+</div>
+
+<!-- ============ FEEDBACK ============
+     Deliberately a different sheet from "Report an issue", and the subtitle
+     says who reads it. The two get confused otherwise: a mess problem and an
+     app problem look similar to someone in a hurry, and a broken water cooler
+     filed here reaches nobody who can fix it. -->
+<div class="backdrop" id="feedbackBackdrop" onclick="closeFeedback()"></div>
+<div class="sheet" id="feedbackSheet">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <div class="sheet-title" id="fbTitle">Tell us</div>
+    <button class="x" onclick="closeFeedback()" aria-label="Close">✕</button>
+  </div>
+  <div class="sheet-sub" id="fbSub">Something wrong with the app, or with the menu itself.</div>
+
+  <!-- Only shown for a general report. A menu report already knows what it is
+       about, and asking again would be asking a question we have the answer to. -->
+  <div class="fields" id="fbKindRow" style="grid-template-columns:1fr">
+    <div class="field"><label>What's this about?</label>
+      <select id="fbKind" onchange="applyFeedbackKind()">
+        <option value="menu">The menu is wrong</option>
+        <option value="app">Something in the app is broken</option>
+        <option value="idea">An idea or suggestion</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="fb-context" id="fbContext" hidden></div>
+
+  <textarea id="fbMessage" placeholder="What should it say instead?" style="min-height:104px"></textarea>
+  <button class="submit" onclick="submitFeedback2()">Send</button>
+  <div class="shared-note" id="fbNote">Goes to whoever maintains the app, not the mess committee.</div>
+  <div class="sheet-loading" id="fbLoading">
+    <div class="cooking" aria-hidden="true">
+      <div class="pan"><div class="pan-body"></div><div class="pan-handle"></div></div>
+      <span class="bit b1">✏️</span><span class="bit b2">📨</span><span class="bit b3">✅</span>
+      <div class="steam"><i></i><i></i><i></i></div>
+    </div>
+    <div class="loading-text" id="fbLoadingText">Sending…</div>
+    <div class="loading-sub" id="fbLoadingSub"></div>
   </div>
 </div>
 
@@ -2421,11 +2530,24 @@ async function renderMain(){
       ${commonNote}
       ${commentsHtml}
       <button class="rate-btn" data-meal="${key}">Rate this ${mess.mealLabels[key].toLowerCase()}</button>
+      <button class="menu-wrong" data-meal="${key}" type="button">Menu wrong?</button>
     `;
     const locked = !mealTimeReached(mappedDateISO, key);
     // Rating combos are now tracked per (hall + menu), but this card only knows the menu
     // (state.mess) being viewed — so it's "already rated" if any hall was rated for this menu.
     const alreadyRated = REVIEW_MESSES.some(h => !!combos[comboId(`${h.value}_${state.mess}`, mappedDateISO, key)]);
+    // The context travels with the report. A bare "the menu is wrong" costs a
+    // round trip to become useful — which day, which mess, which meal — and the
+    // person who could answer that has already closed the app.
+    const wrong = card.querySelector('.menu-wrong');
+    if (wrong) wrong.onclick = () => openFeedback('menu', {
+      hall:  null,                 // the week view shows a menu style, not a hall
+      menu:  state.mess,
+      day:   state.day,
+      meal:  key,
+      served_on: mappedDateISO
+    });
+
     const btn = card.querySelector('.rate-btn');
     if (locked){
       btn.disabled = true;
@@ -3119,7 +3241,9 @@ function friendlyWriteError(err){
     return "That meal is closed for rating now.";
   }
   if (code === '23514' || msg.includes('check constraint')){
-    return "The server rejected that — check the mess and meal are right.";
+    // Shared by ratings, complaints AND feedback now, so it cannot name fields
+    // that only one of the three has.
+    return "The server wouldn't accept that. Check the details and try again.";
   }
   // Unknown. Say what actually happened, and put the whole thing in the console
   // for anyone who can open one.
@@ -3280,6 +3404,138 @@ async function ensureMealRatings(menu, dateISO){
   if (JSON.stringify(keys.map(k => mealRatings[k] || null)) !== before) renderMain();
 }
 
+/* ================= FEEDBACK =================
+   Two doors, one sheet:
+
+     - "Menu wrong?" under a meal card, which arrives knowing the day, the menu
+       style and the meal
+     - "Send feedback" in More, which knows nothing and so asks
+
+   Kept apart from complaints on purpose. A complaint is about the MESS and is
+   read by the committee; this is about the APP or its DATA and is read by
+   whoever maintains it. Same words, different reader — and a broken water
+   cooler filed here would reach nobody who can fix it, which is why the
+   subtitle of each sheet names its audience. */
+const FB_TITLES = {
+  menu: ['The menu is wrong',  "Tell us what it should say — we'll fix the app's copy."],
+  app:  ['Something is broken', 'What happened, and what were you doing at the time?'],
+  idea: ['An idea',             "Anything that would make this more useful."]
+};
+const FB_PLACEHOLDERS = {
+  menu: 'What should it say instead? e.g. "Tuesday dinner is paneer now, not gobi"',
+  app:  'What went wrong? e.g. "the Week tab is blank after I sign in"',
+  idea: "What would you add or change?"
+};
+let fbContext = null;
+const FB_KIND_LABELS = { menu:'Menu correction', app:'Problem with the app', idea:'Suggestion' };
+const FB_KIND_ICONS  = { menu:'📋', app:'🐞', idea:'💡' };
+
+/* Bump alongside CACHE_VERSION in sw.js. It rides along on every bug report,
+   which is the difference between "the Week tab was blank" and "the Week tab
+   was blank on v29" — the second one can be checked against a diff. */
+const APP_VERSION = 'v30';
+
+// Everything is behind the sign-in lock, so this only fires when a session has
+// expired while the app sat open — rare, and confusing without a message.
+function requireSignedIn(){
+  if (sb && session && session.user) return true;
+  showToast("You're signed out — sign in again to send this.");
+  return false;
+}
+
+function openFeedback(kind, context){
+  if (!requireSignedIn()) return;
+  fbContext = context || null;
+  const k = FB_TITLES[kind] ? kind : 'app';
+
+  document.getElementById('fbKind').value = k;
+  // A menu report already knows what it is about; asking again would be asking
+  // a question we have the answer to.
+  document.getElementById('fbKindRow').hidden = !!fbContext;
+  applyFeedbackKind();
+
+  const box = document.getElementById('fbContext');
+  if (fbContext){
+    const day  = fbContext.day || '';
+    const meal = GENERIC_MEAL_LABELS[fbContext.meal] || fbContext.meal || '';
+    const menu = menuLabelFor(fbContext.menu) || '';
+    box.innerHTML = `<span class="ico">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M8 2v4m8-4v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg></span>
+      <span>About <b>${escapeHtml(day)} ${escapeHtml(meal.toLowerCase())}</b> · ${escapeHtml(menu)}</span>`;
+    box.hidden = false;
+  } else {
+    box.hidden = true;
+    box.innerHTML = '';
+  }
+
+  document.getElementById('fbMessage').value = '';
+  document.getElementById('fbLoading').classList.remove('show');
+  document.getElementById('feedbackBackdrop').classList.add('show');
+  document.getElementById('feedbackSheet').classList.add('show');
+  setTimeout(() => { try{ document.getElementById('fbMessage').focus(); }catch(e){} }, 260);
+}
+
+function applyFeedbackKind(){
+  const k = document.getElementById('fbKind').value;
+  const t = FB_TITLES[k] || FB_TITLES.app;
+  document.getElementById('fbTitle').textContent = t[0];
+  document.getElementById('fbSub').textContent   = t[1];
+  document.getElementById('fbMessage').placeholder = FB_PLACEHOLDERS[k] || '';
+}
+
+function closeFeedback(){
+  document.getElementById('feedbackBackdrop').classList.remove('show');
+  document.getElementById('feedbackSheet').classList.remove('show');
+  fbContext = null;
+}
+
+// Named submitFeedback2 because submitFeedback() has meant "send a star rating"
+// since long before this existed, and renaming it would touch the rating path.
+async function submitFeedback2(){
+  const msg = document.getElementById('fbMessage').value.trim();
+  if (!msg){ showToast('Write a line or two first.'); return; }
+  const kind = document.getElementById('fbKind').value;
+
+  const btn = document.querySelector('#feedbackSheet .submit');
+  if (btn) btn.disabled = true;
+  document.getElementById('fbLoading').classList.add('show');
+
+  const ref = newComplaintRef();
+  try{
+    await postFeedback({ kind, message: msg, context: fbContext, ref });
+    document.getElementById('fbLoading').classList.remove('show');
+    closeFeedback();
+    showToast(kind === 'menu' ? 'Thanks — we’ll check the menu.' : 'Thanks — sent.');
+    addMySubmission({ type:'feedback', kind, message: msg, context: fbContext,
+                      ref, status:'new', ts: Date.now() });
+    if (typeof renderYou === 'function' && currentView === 'you') renderYou();
+  }catch(err){
+    document.getElementById('fbLoading').classList.remove('show');
+    const friendly = friendlyWriteError(err);
+    showErrorToast(friendly || "Couldn't send that. Try again in a moment.");
+  }finally{
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function postFeedback({ kind, message, context, ref }){
+  const user = requireSession();
+  await insertRow('feedback', {
+    student_id: user.id,
+    roll:       identity ? identity.roll : null,
+    full_name:  identity ? identity.name : null,
+    kind, message, ref,
+    context:    context || null,
+    // What they were running. Two fields turn "it didn't work" into something
+    // reproducible, and neither of them identifies anybody.
+    app_version: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : null),
+    user_agent:  (navigator.userAgent || '').slice(0, 300)
+  });
+}
+
 /* ---------------- COMPLAINT STATUS (mess committee → student) ----------------
    The committee sets `status` and `committee_note` on the row in Supabase's Table
    Editor — that dashboard bypasses RLS, so it needs no admin page building for it.
@@ -3294,6 +3550,23 @@ const STATUS_LABELS = { submitted:'○ Submitted', reviewing:'◐ Being looked a
    No refs filter is needed for safety: the `complaints_read_own` policy already
    restricts a student to their own rows, so the worst a tampered request can do
    is return fewer rows. The `.in()` is there to keep the response small. */
+/* Replies to feedback, keyed by the same short reference complaints use.
+   Deliberately the same SHAPE as fetchComplaintStatuses — {status, note} — so
+   the You tab renders both through one code path rather than two that drift. */
+async function fetchFeedbackReplies(refs){
+  if (!refs.length || !sb || !session) return {};
+  try{
+    const { data, error } = await sb.from('feedback')
+      .select('ref,status,reply').in('ref', refs);
+    if (error || !data) return {};
+    const out = {};
+    data.forEach(r => {
+      if (r.ref) out[r.ref] = { status: r.status || 'new', note: r.reply || '' };
+    });
+    return out;
+  }catch(e){ return {}; }
+}
+
 async function fetchComplaintStatuses(refs){
   if (!refs.length || !sb || !session) return {};
   try{
@@ -4232,6 +4505,22 @@ async function renderYou(){
 
   const paint = (statuses) => {
     body.innerHTML = list.map(it => {
+      if (it.type === 'feedback'){
+        const c = it.context || null;
+        const about = c
+          ? `${c.day || ''} ${(GENERIC_MEAL_LABELS[c.meal] || c.meal || '').toLowerCase()} · ${menuLabelFor(c.menu) || ''}`
+          : (FB_KIND_LABELS[it.kind] || 'Feedback');
+        const reply = (it.ref && statuses[it.ref] && statuses[it.ref].note) || it.reply || '';
+        return `<div class="mysub-item">
+          <div class="mysub-top">
+            <span>${FB_KIND_ICONS[it.kind] || '💬'} ${escapeHtml(FB_KIND_LABELS[it.kind] || 'Feedback')}</span>
+            <span class="mysub-when">${formatWhen(it.ts)}</span>
+          </div>
+          ${c ? `<div class="mysub-comment" style="color:var(--faint);margin-top:4px">${escapeHtml(about)}</div>` : ''}
+          <div class="mysub-comment">${escapeHtml(it.message || '')}</div>
+          ${reply ? `<div class="status-note">"${escapeHtml(reply)}"</div>` : ''}
+        </div>`;
+      }
       if (it.type === 'rating'){
         const place = it.hall ? `${messLabelFor(it.hall)} · ${menuLabelFor(it.menu)}` : messLabelFor(it.mess);
         return `<div class="mysub-item">
@@ -4262,16 +4551,30 @@ async function renderYou(){
   };
 
   paint({});
-  const refs = reports.filter(r => r.ref).map(r => r.ref);
-  if (refs.length){
-    const statuses = await fetchComplaintStatuses(refs);
+  const refs   = reports.filter(r => r.ref).map(r => r.ref);
+  const fbRefs = list.filter(x => x.type === 'feedback' && x.ref).map(x => x.ref);
+  if (refs.length || fbRefs.length){
+    // One map for both, because the two tables share the reference format and
+    // the paint function reads them the same way.
+    const [complaintStatuses, feedbackReplies] = await Promise.all([
+      refs.length   ? fetchComplaintStatuses(refs) : Promise.resolve({}),
+      fbRefs.length ? fetchFeedbackReplies(fbRefs) : Promise.resolve({})
+    ]);
+    const statuses = Object.assign({}, complaintStatuses, feedbackReplies);
     if (Object.keys(statuses).length){
       paint(statuses);
       paintStats(statuses);
       // Keep the latest known status locally so the count is right offline too,
       // and so the next paint doesn't start from the stale one again.
-      const updated = list.map(it => (it.ref && statuses[it.ref] && statuses[it.ref].status)
-        ? { ...it, status: statuses[it.ref].status } : it);
+      const updated = list.map(it => {
+        const live = it.ref && statuses[it.ref];
+        if (!live || !live.status) return it;
+        // Feedback keeps the reply text too, so an answer is still readable on
+        // the train back with no signal — the status alone says nothing useful.
+        return it.type === 'feedback'
+          ? { ...it, status: live.status, reply: live.note || it.reply || '' }
+          : { ...it, status: live.status };
+      });
       if (window.storage){
         try{ await window.storage.set('my_submissions', JSON.stringify(updated), false); }catch(e){ /* non-fatal */ }
       }
