@@ -708,6 +708,35 @@ a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
 .step-b b{ display:block; font-size:14.5px; font-weight:600; margin-bottom:3px; }
 .step-b p{ font-size:13.5px; color:var(--muted); line-height:1.55; }
 
+/* The waiting-for-signal bar. Amber rather than red: nothing has gone wrong,
+   the submission is safe, it just has not left the building yet. */
+.mysub-photo{
+  display:block; margin-top:10px; width:100%; max-width:200px; max-height:150px;
+  object-fit:cover; border-radius:var(--r-md); border:1px solid var(--line);
+}
+.mysub-photo:not(.ready):not(.waiting){ display:none; }
+.mysub-photo.waiting{ height:46px; background:var(--surface-2); border-style:dashed; }
+.outbox-bar{
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  padding:11px 13px; border-radius:var(--r-md);
+  background:var(--accent-tint); border:1px solid var(--accent-line);
+  font-size:13.5px; color:var(--ink);
+}
+.outbox-bar[hidden]{ display:none; }
+.ob-ico{ flex:none; color:var(--accent-deep); display:flex; }
+.ob-text{ flex:1; min-width:0; }
+.ob-retry{
+  flex:none; cursor:pointer; font:inherit; font-size:12.5px; font-weight:600;
+  color:var(--on-accent); background:var(--accent); border:0;
+  border-radius:999px; padding:6px 13px;
+}
+.mysub-item.pending{ border-style:dashed; }
+.pending-tag{
+  display:inline-block; margin-left:7px; padding:2px 8px; border-radius:999px;
+  font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.1em;
+  text-transform:uppercase; background:var(--accent-soft); color:var(--accent-deep);
+}
+
 /* The loudest thing on this screen, on purpose.
 
    It shares the page with the install row, and two accent-tinted cards stacked
@@ -741,6 +770,28 @@ a.chip.paid{ min-height:44px; padding-top:0; padding-bottom:0; }
 /* Stepped down from accent-soft to the plain surface, so the feedback row
    above it is unambiguously the first thing you see. Still perfectly visible —
    it just stopped competing. */
+.photo-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.photo-btn{
+  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  padding:9px 13px; border-radius:var(--r-md);
+  background:var(--surface-2); border:1px dashed var(--line);
+  color:var(--ink-2); font-size:13px; font-weight:500;
+  transition:border-color .18s ease, color .18s ease;
+}
+.photo-btn:hover, .photo-btn:focus-within{ border-color:var(--accent-line); color:var(--accent-deep); }
+.photo-preview{
+  width:52px; height:52px; border-radius:var(--r-md); object-fit:cover;
+  border:1px solid var(--line); display:none;
+}
+.photo-remove{
+  background:none; border:none; color:var(--red); font-size:12px; cursor:pointer;
+  display:none; font-family:'Work Sans',sans-serif; padding:4px;
+}
+/* Says what will happen to the photo, at the moment they attach it. A student
+   who is about to lose their photo to a bad connection should hear it here and
+   not after tapping submit. */
+.photo-note{ flex-basis:100%; font-size:12px; color:var(--faint); line-height:1.4; }
+
 .install{
   display:none; align-items:center; gap:13px; padding:15px 17px; margin-bottom:16px;
   background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-lg);
@@ -949,11 +1000,6 @@ textarea::placeholder{ color:var(--faint); }
 .submit:active{ transform:scale(.99); }
 .submit.danger{ background:var(--red); color:#fff8ef; box-shadow:0 6px 18px rgba(209,80,58,.3); }
 .shared-note{ font-size:11.5px; color:var(--faint); text-align:center; margin-top:11px; }
-.photo-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-.photo-btn{ background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--r-md);
-  padding:13px 16px; font-size:13px; color:var(--muted); cursor:pointer; font-family:'Work Sans',sans-serif; min-height:48px; display:flex; align-items:center; }
-.photo-preview{ width:52px; height:52px; border-radius:var(--r-md); object-fit:cover; border:1px solid var(--line); display:none; }
-.photo-remove{ background:none; border:none; color:var(--red); font-size:12px; cursor:pointer; display:none; font-family:'Work Sans',sans-serif; }
 .sheet-loading{
   position:absolute; inset:0; border-radius:var(--r-xl) var(--r-xl) 0 0; background:var(--surface);
   display:none; flex-direction:column; align-items:center; justify-content:center; gap:15px; z-index:5;
@@ -1096,6 +1142,51 @@ textarea::placeholder{ color:var(--faint); }
    off rather than being clipped into uselessness. */
 .toast.long{ border-radius:var(--r-lg); padding:14px 18px; font-weight:500; }
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ---------- First-run appearance notice ----------
+   Sits above the tab bar, on top of whatever view is showing, and stays until it
+   is dealt with. It shares the toast's corner, so while it is up the toast moves
+   clear of it rather than landing on top. */
+.tipbar{
+  position:fixed; left:var(--edge); right:var(--edge);
+  bottom:calc(var(--tabh) + var(--bot) + 14px); z-index:90;
+  padding:12px 13px 11px; border-radius:var(--r-lg);
+  background:var(--surface); border:1px solid var(--accent-line);
+  box-shadow:var(--sh-lg); font-size:13.5px; color:var(--ink);
+  opacity:0; transform:translateY(10px);
+  transition:opacity .28s ease, transform .28s ease;
+}
+.tipbar[hidden]{ display:none; }
+.tipbar.show{ opacity:1; transform:translateY(0); }
+.tip-row{ display:flex; align-items:flex-start; gap:10px; }
+.tip-ico{ flex:none; display:flex; color:var(--accent-deep); margin-top:1px; }
+.tip-text{ flex:1; min-width:0; line-height:1.45; }
+.tip-actions{ display:flex; justify-content:flex-end; margin-top:10px; }
+.tip-go{
+  flex:none; cursor:pointer; font:inherit; font-size:13px; font-weight:600;
+  color:var(--on-accent); background:var(--accent); border:0;
+  border-radius:999px; padding:8px 16px; white-space:nowrap;
+}
+.tip-x{
+  flex:none; cursor:pointer; border:0; background:none; color:var(--faint);
+  font-size:20px; line-height:1; padding:0 2px; border-radius:8px;
+  margin-top:-2px;
+}
+.tip-x:active{ background:var(--surface-2); }
+.tip-go:focus-visible,.tip-x:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+body.tip-open .toast{ bottom:calc(var(--tabh) + var(--bot) + 84px); }
+
+/* The card "Show me" lands on. Two pulses of the accent tint, then nothing —
+   enough to say "this one", not enough to keep blinking at someone reading it. */
+@keyframes tipFlash{
+  0%,100%{ background:var(--surface); border-color:var(--line); }
+  25%,75%{ background:var(--accent-tint); border-color:var(--accent-line); }
+}
+.setting.flash{ animation:tipFlash 1.5s ease 2; }
+@media (prefers-reduced-motion: reduce){
+  .setting.flash{ animation:none; background:var(--accent-tint); border-color:var(--accent-line); }
+  .tipbar{ transition:none; }
+}
 
 /* ---------- Lock ---------- */
 #lockScreen{ position:fixed; inset:0; z-index:200; background:var(--bg);
@@ -1349,6 +1440,15 @@ textarea::placeholder{ color:var(--faint); }
 
 <!-- ============ YOU ============ -->
 <section class="view wrap" id="view-you">
+  <!-- Anything typed without signal lands here first. Visible on purpose: the
+       one thing worse than a submission failing is a student not knowing. -->
+  <div class="outbox-bar" id="outboxBar" hidden>
+    <span class="ob-ico">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="ob-text"></span>
+    <button type="button" class="ob-retry" onclick="flushOutbox({quiet:false})">Try now</button>
+  </div>
   <div class="stats" id="youStats"></div>
   <button type="button" class="whoami" id="youIdentity" hidden style="margin-top:16px" onclick="changeIdentity()" aria-label="Change your name and roll number"></button>
   <div id="youBody"></div>
@@ -1358,10 +1458,10 @@ textarea::placeholder{ color:var(--faint); }
 <section class="view wrap" id="view-more">
   <!-- Moved off the top bar. "Auto" follows the phone; the other two are here because
        dark-on-bright is unreadable walking outdoors at midday and the OS won't know that. -->
-  <div class="setting">
+  <div class="setting" id="appearanceCard">
     <div class="setting-label">
       <b>Appearance</b>
-      <span>Auto follows your phone. Pick Light if you read this outdoors.</span>
+      <span>Starts light, which reads best outdoors. Pick Dark, or Auto to follow your phone.</span>
     </div>
     <div class="seg3" id="themeSeg" role="group" aria-label="Appearance">
       <button type="button" class="seg3-btn" data-theme="light" onclick="setTheme('light')">Light</button>
@@ -1433,6 +1533,7 @@ textarea::placeholder{ color:var(--faint); }
       Serving G, AB and CD mess, across both the North and South Indian menus. If the menu is ever
       wrong or out of date, report it and it gets fixed.
     </p>
+
   </div>
 
   <div class="list">
@@ -1584,7 +1685,7 @@ textarea::placeholder{ color:var(--faint); }
   <div class="stars" id="starsRow"></div>
   <div class="star-hint" id="starHint">Tap to rate</div>
 
-  <textarea id="fComment" placeholder="Anything to tell the mess committee? (optional)"></textarea>
+  <textarea id="fComment" placeholder="Anything to tell the mess committee? (optional)" maxlength="600"></textarea>
   <button class="submit" onclick="submitFeedback()">Submit feedback</button>
   <!-- Was "Shared with other students using this app" — untrue while no GET endpoint
        exists. The rating does reach the committee's backend; it just isn't visible to
@@ -1616,12 +1717,29 @@ textarea::placeholder{ color:var(--faint); }
       <select id="cMess"><option value="g">G Mess</option><option value="ab">AB Mess</option><option value="cd">CD Mess</option></select>
     </div>
   </div>
-  <textarea id="cComment" placeholder="What happened? Be as specific as you can…" style="min-height:104px"></textarea>
-  <div class="photo-row">
-    <label class="photo-btn" for="photoInput">📷 Add a photo</label>
-    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(event)">
-    <img id="photoPreview" class="photo-preview" alt="preview">
-    <button class="photo-remove" id="photoRemoveBtn" onclick="removePhoto()">Remove</button>
+  <textarea id="cComment" placeholder="What happened? Be as specific as you can…" style="min-height:104px" maxlength="1200"></textarea>
+  <!-- PHOTOS — held open, deliberately not pretending.
+
+       Until 2026-09-27 this button compressed the image, showed a preview, and
+       then submitComplaint() sent {hall, comment, ref}. The photo was never a
+       parameter. A student photographed a problem, saw it on screen, read
+       "Complaint sent", and believed the committee could see it. Nobody could.
+
+       The slot is kept because photos are coming, but it says so rather than
+       taking one and dropping it. Turning it on is four things, all prepared in
+       supabase/08_photos.sql: create the bucket, add the policies, upload before
+       the insert, write photo_url. Then flip PHOTOS_ENABLED below, restore the
+       handler, and declare Photos on the Play Store Data safety form. -->
+  <div class="photo-row" id="photoRow">
+    <label class="photo-btn" for="photoInput">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9a2 2 0 0 1 2-2h2l1.5-2h7L17 7h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>
+      Add a photo
+    </label>
+    <input type="file" id="photoInput" accept="image/*" capture="environment"
+           style="display:none" onchange="handlePhotoSelect(event)">
+    <img id="photoPreview" class="photo-preview" alt="The photo you attached">
+    <button type="button" class="photo-remove" id="photoRemoveBtn" onclick="removePhoto()">Remove</button>
+    <span class="photo-note" id="photoNote"></span>
   </div>
   <button class="submit danger" onclick="submitComplaint()">Submit report</button>
   <div class="shared-note">You'll get a reference number to follow it up with.</div>
@@ -1664,7 +1782,7 @@ textarea::placeholder{ color:var(--faint); }
 
   <div class="fb-context" id="fbContext" hidden></div>
 
-  <textarea id="fbMessage" placeholder="What should it say instead?" style="min-height:104px"></textarea>
+  <textarea id="fbMessage" placeholder="What should it say instead?" style="min-height:104px" maxlength="1200"></textarea>
   <button class="submit" onclick="submitFeedback2()">Send</button>
   <div class="shared-note" id="fbNote">Goes to whoever maintains the app, not the mess committee.</div>
   <div class="sheet-loading" id="fbLoading">
@@ -1686,6 +1804,33 @@ textarea::placeholder{ color:var(--faint); }
     <button class="x" onclick="closeMySubmissions()" aria-label="Close">✕</button></div>
   <div class="sheet-sub">Saved on this device.</div>
   <div id="mySubBody"></div>
+</div>
+
+<!-- Shown once per device, on the first run, and then never again.
+
+     The app now starts in LIGHT mode rather than following the phone. That is a
+     better first impression for something read in a queue outdoors, but it also
+     means a student who prefers dark sees a bright app and has no way of knowing
+     the setting exists — it lives in More, two taps away, behind a card.
+
+     A bar rather than a toast, on purpose. A toast is gone in two seconds, which
+     is the wrong container for "here is where a setting lives"; and the feedback
+     row already taught us that a quiet notice on this screen gets missed. This
+     one waits until it is dealt with. -->
+<div class="tipbar" id="themeTip" hidden>
+  <div class="tip-row">
+    <span class="tip-ico" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </span>
+    <span class="tip-text">Starting in <b>light</b> mode. Dark and Auto are under Appearance in More.</span>
+    <button type="button" class="tip-x" onclick="dismissThemeTip()" aria-label="Dismiss">&times;</button>
+  </div>
+  <!-- The action goes on its own row so the sentence gets the full width. Beside
+       the text it left a column about twelve characters wide, which broke a
+       50-character sentence into three ragged lines. -->
+  <div class="tip-actions">
+    <button type="button" class="tip-go" onclick="themeTipGo()">Show me</button>
+  </div>
 </div>
 
 <div class="toast" id="toast">Thanks — feedback saved!</div>
@@ -1823,8 +1968,57 @@ async function signOut(){
   try{ await sb.auth.signOut(); }catch(e){ /* clearing locally is what matters */ }
   session = null;
   identity = null;
-  try{ if (window.storage) await window.storage.set('student_identity', '', false); }catch(e){}
+  await clearDeviceData();
   location.reload();
+}
+
+/* Everything this account left on the handset.
+
+   localStorage belongs to the DEVICE, not the account, and the You tab renders
+   whatever it finds there. Sign-out used to clear the name and roll number and
+   nothing else, so the next person to sign in on a borrowed phone read the
+   previous student's complaints — text and reference numbers — in full. The app
+   tells students their reports are not anonymous; it never told them the report
+   stays on the handset.
+
+   The submission history, the outbox and the rated-meal markers are all
+   per-student. Theme and mess preference are per-device and stay. */
+async function clearDeviceData(){
+  const keys = ['student_identity', 'my_submissions', OUTBOX_KEY,
+                'rated_combos', 'ratedCombos'];
+  for (const k of keys){
+    try{ if (window.storage) await window.storage.set(k, '', false); }catch(e){ /* blocked */ }
+  }
+  try{
+    // Per-meal feedback caches and the old per-complaint photo records are keyed
+    // by timestamp, so they have to be swept by prefix rather than by name.
+    const stale = Object.keys(localStorage).filter(k =>
+      k.startsWith('psgmess:feedback_') || k.startsWith('psgmess:complaint_'));
+    stale.forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
+  }catch(e){ /* storage blocked — nothing was stored either */ }
+  try{ renderOutboxBadge(0); }catch(e){}
+}
+
+/* A second line of defence for the same problem. Storage can outlive a sign-out
+   the app never saw — a crash mid-logout, a restored backup, or a device handed
+   over without signing out at all. So the cache carries the account it belongs
+   to, and anything else is discarded rather than displayed. */
+const OWNER_KEY = 'cache_owner';
+async function enforceCacheOwner(){
+  if (!session || !session.user) return;
+  const me = session.user.id;
+  let prev = null;
+  try{
+    if (window.storage){
+      const r = await window.storage.get(OWNER_KEY, false);
+      prev = r && r.value ? r.value : null;
+    }
+  }catch(e){ return; }
+  if (prev && prev !== me){
+    await clearDeviceData();
+    try{ console.warn('[mess] device cache belonged to another account — cleared'); }catch(e){}
+  }
+  try{ if (window.storage) await window.storage.set(OWNER_KEY, me, false); }catch(e){}
 }
 
 /* Is there a stored session on this device, even one we cannot verify right now?
@@ -1892,6 +2086,9 @@ let signedInOnce = false;
 async function afterSignIn(){
   if (signedInOnce) return;
   signedInOnce = true;
+  // Before anything reads the cache: is it even ours? Must run ahead of
+  // loadIdentity(), which would otherwise adopt the previous student's name.
+  await enforceCacheOwner();
   await loadIdentity();
   hideLock();
   renderWhoami();
@@ -1901,10 +2098,16 @@ async function afterSignIn(){
   // is someone to fetch them as, or the cards keep saying "you" until the
   // student happens to change day or mess.
   renderMain();
+  // Anything saved while offline goes out now that there is a session to send
+  // it as. Quiet on boot — nobody wants a toast for something they did yesterday.
+  flushOutbox({ quiet: true });
   if (!identity || !identity.roll){
     // Give the lock screen time to fade before another panel slides up.
     setTimeout(() => openIdentity(), 420);
   }
+  // First run on this device only: say where the light/dark control lives. If the
+  // identity sheet is up by now this defers itself and returns when it closes.
+  setTimeout(maybeShowThemeTip, 900);
 }
 
 /* ---------------- THEME (light / dark) ---------------- */
@@ -1925,7 +2128,17 @@ function haptic(ms){
    toggle because "auto" (follow the phone) is what most people want, and because someone
    reading this walking to the mess in noon sunlight needs to be able to FORCE light —
    dark-on-bright is the one combination that is genuinely unreadable outdoors. */
-let themePref = 'auto';   // 'light' | 'dark' | 'auto'
+/* The DEFAULT is light, not auto.
+
+   Auto follows the phone, and most phones are on dark — so a student opening
+   this for the first time got a dark app whether or not that is what suits a
+   menu read in daylight, at a queue, outdoors. Light is the better first
+   impression and the better bet for where this is actually used; anyone who
+   wants dark can say so once and never think about it again.
+
+   This only affects people with NO stored preference. Anyone who has ever
+   touched the control keeps what they chose, including an explicit 'auto'. */
+let themePref = 'light';   // 'light' | 'dark' | 'auto'
 
 function resolvedTheme(pref){
   if (pref === 'light' || pref === 'dark') return pref;
@@ -1952,16 +2165,71 @@ async function setTheme(pref){
     if (window.storage) await window.storage.set('theme_pref', pref, false);
   }catch(e){ /* non-fatal */ }
 }
+let themeIsFirstRun = false;
 async function initTheme(){
   try{
     if (window.storage){
       const res = await window.storage.get('theme_pref', false);
       // 'light'/'dark' may be stored from the old two-way toggle; both still mean the same.
       if (res && ['light','dark','auto'].includes(res.value)) themePref = res.value;
+      else themeIsFirstRun = true;
     }
-  }catch(e){ /* no saved preference yet */ }
+  }catch(e){ themeIsFirstRun = true; /* storage blocked — treat as first run */ }
   applyTheme(resolvedTheme(themePref));
   renderThemeSeg();
+}
+
+/* ---- Telling a new student where the control is ----
+
+   The default changed to light, which is a better first impression but a worse
+   discovery problem: someone who wants dark now has to find a setting nobody
+   pointed them at. So it gets pointed at, once, on a device's first run.
+
+   Shown after sign-in rather than at boot, because at boot the lock screen is
+   still up. Deferred again if a sheet is open — the identity sheet opens by
+   itself for a brand-new student, and this would be behind it. */
+let pendingThemeTip = false;
+
+function maybeShowThemeTip(){
+  if (!themeIsFirstRun) return;
+  if (sheetStack.length){ pendingThemeTip = true; return; }
+  themeIsFirstRun = false;
+  pendingThemeTip = false;
+  const el = document.getElementById('themeTip');
+  if (!el) return;
+  el.hidden = false;
+  document.body.classList.add('tip-open');
+  requestAnimationFrame(() => el.classList.add('show'));
+  // Writing the default down is what keeps this to once per device: after this
+  // there IS a stored preference, so the next boot is not a first run — whether
+  // or not the student ever touches the control.
+  try{ if (window.storage) window.storage.set('theme_pref', themePref, false); }catch(e){}
+}
+
+function hideThemeTip(){
+  const el = document.getElementById('themeTip');
+  if (!el) return;
+  el.classList.remove('show');
+  document.body.classList.remove('tip-open');
+  setTimeout(() => { el.hidden = true; }, 300);
+}
+function dismissThemeTip(){ haptic(6); hideThemeTip(); }
+
+/* "Show me" goes to the card, not just to the page. More is eight stacked
+   cards; landing at the top of it and leaving someone to hunt is not an answer. */
+function themeTipGo(){
+  haptic(8);
+  hideThemeTip();
+  go('more');
+  setTimeout(() => {
+    const card = document.getElementById('appearanceCard');
+    if (!card) return;
+    try{ card.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(e){ /* older Safari */ }
+    card.classList.remove('flash');
+    void card.offsetWidth;            // restart the animation if it is still running
+    card.classList.add('flash');
+    setTimeout(() => card.classList.remove('flash'), 3200);
+  }, 340);
 }
 // On 'auto', follow the phone if it flips (scheduled dark mode, or sunset).
 if (window.matchMedia){
@@ -2256,7 +2524,16 @@ function getPriced(item){
 
 /* ---------------- STATE ---------------- */
 const now = new Date();
-const todayName = DAYS[now.getDay()];
+/* `todayName` used to be a const computed once here, at script evaluation.
+
+   An installed PWA is not reloaded daily — it sits in the app switcher for
+   weeks. So at 00:20 the app still believed it was yesterday, and every date
+   the rating flow derived from it was a day out until something forced a
+   reload. The person rating last night's dinner over breakfast — the exact case
+   the 12-hour window exists for — is who hit it.
+
+   It is a `let` now, and tick() rolls it over. */
+let todayName = DAYS[now.getDay()];
 /* Declared up here, not down with toggleVegOnly() where it reads more naturally.
    `visibleItems()` is now called from renderToday(), and the top-level `tick()` call runs
    renderToday() partway through the script — before a `let` further down has initialised.
@@ -2277,10 +2554,119 @@ let state = {
 // Every 15s: keep the top-bar clock, the Now card and the "Opens in 42 min" countdowns
 // honest. 15s is fine for a minute-resolution clock — the worst case is the displayed
 // minute being a few seconds stale, which nobody can perceive without a second reference.
+/* ================= SHEETS: BACK BUTTON AND FOCUS =================
+
+   Two defects with one cause — a sheet was a CSS class and nothing else.
+
+   1. Android's hardware back is what a phone user reaches for to dismiss a
+      sheet. Sheets pushed no history entry, so back skipped past the sheet and
+      left the app, taking whatever had been typed with it.
+   2. With a sheet open, 41 of 46 focusable controls sat behind the overlay and
+      were still reachable by keyboard and screen reader, and focus never moved
+      into the sheet at all.
+
+   Both are fixed here rather than in each of the six open/close pairs, so a
+   seventh sheet added later inherits the behaviour instead of forgetting it.
+
+   WHAT THIS DELIBERATELY DOES NOT DO: set `inert`. It used to, on every `.view`
+   and the tab bar — and that was a bug, because clearing it depended on someone
+   remembering to call onSheetClosed(). submitIdentity() closed the identity
+   sheet by removing its CSS classes and never called it, so a first-time student
+   who typed their name and roll number got an app where every control inside
+   every view was dead: `inert` blocks pointer events, not just the tab order.
+   The one person guaranteed to hit it was a brand-new student, thirty seconds in.
+
+   `inert` is now owned solely by guardSheetFocus() further down, which watches
+   the `show` CLASS on the sheets themselves. The class is what makes a sheet
+   visible, so a mechanism keyed to it cannot fall out of step with what is on
+   screen the way a forgotten function call can. */
+let sheetStack = [];
+let lastFocused = null;
+// Set while a back press is what is closing a sheet, so the closer knows not to
+// hand the history entry back a second time.
+let closingViaHistory = false;
+// How many popstate events are our own tidy-up rather than the student pressing
+// back. Without this, closing an upper sheet with ✕ would walk history back and
+// take the sheet underneath it with it.
+let pendingBacks = 0;
+
+function onSheetOpened(sheetId, closer){
+  const el = document.getElementById(sheetId);
+  if (!el) return;
+  lastFocused = document.activeElement;
+  let pushed = false;
+  try{ history.pushState({ sheet: sheetId }, ''); pushed = true; }catch(e){ /* about:srcdoc */ }
+  sheetStack.push({ sheetId, closer, pushed });
+
+  // Move focus in. Hiding the rest of the app is guardSheetFocus()'s job.
+  setTimeout(() => {
+    const first = el.querySelector('textarea, select, input, button:not([disabled])');
+    try{ (first || el).focus({ preventScroll: true }); }catch(e){}
+  }, 120);
+}
+
+function onSheetClosed(sheetId){
+  const i = sheetStack.findIndex(s => s.sheetId === sheetId);
+  if (i !== -1){
+    const gone = sheetStack.splice(i, 1)[0];
+    // Closed by its ✕, by a swipe, or by submitting: the entry this sheet pushed
+    // is still sitting in history, and the student's next back press would be
+    // swallowed doing nothing. Give it back.
+    if (gone.pushed && !closingViaHistory){
+      pendingBacks++;
+      try{ history.back(); }catch(e){ pendingBacks--; }
+    }
+  }
+  if (!sheetStack.length){
+    try{ if (lastFocused && lastFocused.focus) lastFocused.focus({ preventScroll: true }); }catch(e){}
+    lastFocused = null;
+    // A first-run notice that had to wait for the identity sheet gets its turn.
+    if (pendingThemeTip) setTimeout(maybeShowThemeTip, 520);
+  }
+}
+
+// Back closes the top sheet instead of leaving the app.
+addEventListener('popstate', () => {
+  if (pendingBacks > 0){ pendingBacks--; return; }   // ours, not the student's
+  const top = sheetStack[sheetStack.length - 1];
+  if (!top) return;
+  closingViaHistory = true;
+  // The closer calls onSheetClosed, which is what pops the stack.
+  try{ top.closer(); }catch(e){ /* the closer removes the class; nothing else to do */ }
+  closingViaHistory = false;
+});
+
+// Escape, for anyone on a keyboard.
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !sheetStack.length) return;
+  e.preventDefault();
+  history.back();
+});
+
 function tick(){
+  rollOverDayIfNeeded();
   renderClock();
   renderToday();
   refreshLockedButtons();
+}
+
+/* Midnight, for an app that was opened days ago. Repaints the parts that are
+   derived from the date rather than reloading, so a student who left the app
+   open does not lose their place — but the day rail, the menu and every rating
+   window move to the new day. */
+function rollOverDayIfNeeded(){
+  const name = DAYS[new Date().getDay()];
+  if (name === todayName) return;
+  const wasViewingToday = (state.day === todayName);
+  todayName = name;
+  if (wasViewingToday) state.day = name;   // "today" should still mean today
+  try{
+    renderDayRow();
+    renderMain();
+    renderTiers(false);
+  }catch(e){
+    try{ console.warn('[mess] day rollover repaint failed', e); }catch(_){}
+  }
 }
 
 // d/m/y as asked — note that's the Indian convention and the opposite of the ISO strings
@@ -3003,6 +3389,7 @@ function openIdentity(){
   if (t) t.textContent = identity ? 'Your details' : "Who's rating?";
   document.getElementById('idBackdrop').classList.add('show');
   document.getElementById('idSheet').classList.add('show');
+  onSheetOpened('idSheet', closeIdentity);
   // Focus the first EMPTY field — re-opening to fix a typo in the roll number shouldn't
   // put the cursor back in a name that's already correct.
   setTimeout(() => {
@@ -3013,6 +3400,7 @@ function openIdentity(){
 function closeIdentity(){
   document.getElementById('idBackdrop').classList.remove('show');
   document.getElementById('idSheet').classList.remove('show');
+  onSheetClosed('idSheet');
   pendingAfterIdentity = null;   // backing out cancels whatever it was gating
 }
 async function submitIdentity(){
@@ -3032,10 +3420,14 @@ async function submitIdentity(){
   await saveIdentity(name, roll);
   renderWhoami();
   renderAccount();
-  document.getElementById('idBackdrop').classList.remove('show');
-  document.getElementById('idSheet').classList.remove('show');
+  // Read what was waiting BEFORE closing, because closeIdentity() clears it —
+  // backing out of the sheet cancels the errand, submitting it does not.
   const next = pendingAfterIdentity;
-  pendingAfterIdentity = null;
+  // Close through the real closer rather than by removing the two classes here.
+  // Doing it by hand is what left the sheet on the stack, left a dead entry in
+  // history, and — until inert moved to guardSheetFocus() — left the whole app
+  // untappable for every student who had just finished signing up.
+  closeIdentity();
   if (next) setTimeout(next, 220);   // let the sheet finish sliding out first
 }
 function changeIdentity(){ haptic(6); openIdentity(); }
@@ -3115,11 +3507,13 @@ function openSheet(meal){
     document.getElementById('fComment').value = "";
     document.getElementById('backdrop').classList.add('show');
     document.getElementById('sheet').classList.add('show');
+  onSheetOpened('sheet', closeSheet);
   });
 }
 function closeSheet(){
   document.getElementById('backdrop').classList.remove('show');
   document.getElementById('sheet').classList.remove('show');
+  onSheetClosed('sheet');
 }
 
 /* ---------------- One meal, expanded ----------------
@@ -3175,10 +3569,12 @@ function openMealSheet(mealKey, dayName){
 
   document.getElementById('mealBackdrop').classList.add('show');
   document.getElementById('mealSheet').classList.add('show');
+  onSheetOpened('mealSheet', closeMealSheet);
 }
 function closeMealSheet(){
   document.getElementById('mealBackdrop').classList.remove('show');
   document.getElementById('mealSheet').classList.remove('show');
+  onSheetClosed('mealSheet');
   mealSheetCtx = null;
 }
 
@@ -3218,6 +3614,168 @@ function requireSession(){
   if (!sb || !session || !session.user) throw new Error('not-signed-in');
   return session.user;
 }
+
+/* `maxlength` on a textarea only constrains typing and pasting — it does not
+   bound the value, which anything setting .value directly sidesteps. The
+   database has no cap on the older columns either, so a 20,000-character
+   complaint used to be stored in full. Bound it here, where the row is built. */
+const TEXT_CAPS = { comment: 600, complaint: 1200, feedback: 1200 };
+function capText(v, n){
+  const t = String(v == null ? '' : v).trim();
+  return t.length > n ? t.slice(0, n) : t;
+}
+
+/* ================= THE OUTBOX =================
+
+   Hostel wifi is the reason this app caches the menu, and it was also the reason
+   a rating typed in the mess used to vanish: every write went straight to the
+   network, and a failed fetch was reported as "Couldn't save: TypeError: Failed
+   to fetch" and then discarded. The worst moment for signal — standing in a
+   concrete dining hall just after eating — is exactly when someone wants to rate.
+
+   So a write that fails for NETWORK reasons is parked here and sent later. A
+   write the server actively REFUSED is not: a closed rating window or a
+   duplicate is an answer, not an outage, and retrying it forever would be
+   dishonest about what happened.
+
+   Deliberately localStorage and not IndexedDB: the queue is a handful of small
+   rows, it has to survive a force-quit, and the storage shim already handles
+   blocked storage. */
+const OUTBOX_KEY = 'outbox_v1';
+const OUTBOX_MAX = 50;          // a queue longer than this means something else is wrong
+
+/* Did this fail because the network is gone, or because the server said no?
+   PostgREST answers carry a code; fetch() failing carries none. Anything with a
+   code is a decision and must not be retried. */
+function isNetworkError(err){
+  if (!err) return false;
+  if (err.code || err.status) return false;
+  const m = String(err.message || err).toLowerCase();
+  return m.includes('failed to fetch') || m.includes('networkerror')
+      || m.includes('load failed')     || m.includes('network request failed')
+      || m.includes('connection')      || err.name === 'TypeError';
+}
+
+async function getOutbox(){
+  try{
+    if (!window.storage) return [];
+    const r = await window.storage.get(OUTBOX_KEY, false);
+    const v = r && r.value ? JSON.parse(r.value) : [];
+    return Array.isArray(v) ? v : [];
+  }catch(e){ return []; }
+}
+async function setOutbox(list){
+  try{
+    if (window.storage) await window.storage.set(OUTBOX_KEY, JSON.stringify(list), false);
+  }catch(e){ /* storage blocked — the queue simply does not persist */ }
+}
+
+/* A queued complaint cannot hold a Blob, so it holds the compressed data URL and
+   uploads at flush time. That is unbounded growth waiting to happen — exactly
+   the defect the old photo button had — so it is capped, and when the cap is
+   reached the photo is dropped and the student is TOLD, rather than the app
+   quietly keeping a promise it cannot afford. */
+const OUTBOX_PHOTO_MAX_BYTES = 600 * 1024;     // roughly four compressed photos
+
+async function photoFitsInOutbox(dataUrl){
+  try{
+    const list = await getOutbox();
+    const used = list.reduce((n, it) => n + ((it.photo && it.photo.photo) || '').length, 0);
+    return (used + dataUrl.length) <= OUTBOX_PHOTO_MAX_BYTES;
+  }catch(e){ return false; }
+}
+
+/* `mine` is what gets written into the You tab once the row lands, so a queued
+   submission can still be shown immediately, marked as pending.
+   `photo` is {photo, ref} for a complaint whose image still has to go up. */
+async function queueWrite(table, row, mine, photo){
+  const list = await getOutbox();
+  if (list.length >= OUTBOX_MAX) return false;
+  list.push({ id: 'ob_' + Date.now() + '_' + Math.floor(Math.random() * 1e4),
+              table, row, mine: mine || null, photo: photo || null,
+              queuedAt: Date.now(), tries: 0 });
+  await setOutbox(list);
+  renderOutboxBadge(list.length);
+  return true;
+}
+
+let flushing = false;
+/* Returns {sent, refused, left}. Refused items are dropped with their reason
+   surfaced — a rating whose window shut while it waited must not sit in the
+   queue forever pretending it will succeed. */
+async function flushOutbox({ quiet = true } = {}){
+  if (flushing || !sb || !session) return null;
+  let list = await getOutbox();
+  if (!list.length){ renderOutboxBadge(0); return null; }
+
+  flushing = true;
+  const keep = [], refused = [];
+  let sent = 0;
+  try{
+    for (const item of list){
+      try{
+        // A queued photo goes up before its row, same order as the live path.
+        // If the upload refuses for a non-network reason, send the report
+        // without it rather than holding the whole complaint hostage.
+        if (item.photo && item.photo.photo && !item.row.photo_url){
+          try{
+            item.row.photo_url = await uploadComplaintPhoto(item.photo.photo, item.photo.ref);
+          }catch(upErr){
+            if (isNetworkError(upErr)) throw upErr;
+            try{ console.warn('[mess] queued photo refused, sending report without it', upErr); }catch(_){}
+          }
+          delete item.photo;                    // never keep it once it has been tried
+        }
+        await insertRow(item.table, item.row);
+        sent++;
+        if (item.mine) await addMySubmission(Object.assign({}, item.mine, { pending: false }));
+      }catch(err){
+        if (isNetworkError(err)){
+          item.tries = (item.tries || 0) + 1;
+          keep.push(item);              // still offline — try again next time
+          break;                        // no point hammering the rest
+        }
+        // A real answer from the server. Drop it and say what happened.
+        refused.push({ item, why: friendlyWriteError(err) || 'The server refused it.' });
+      }
+    }
+  } finally {
+    flushing = false;
+  }
+
+  // anything after the break is still unsent
+  const done = sent + refused.length;
+  const remaining = keep.concat(list.slice(done + keep.length));
+  await setOutbox(remaining);
+  renderOutboxBadge(remaining.length);
+
+  if (sent && !quiet){
+    showToast(sent === 1 ? 'Your saved submission has been sent.'
+                         : `${sent} saved submissions have been sent.`);
+  }
+  if (refused.length && !quiet){
+    showErrorToast(refused.length === 1
+      ? `One saved submission couldn't be sent: ${refused[0].why}`
+      : `${refused.length} saved submissions couldn't be sent.`);
+  }
+  if (sent || refused.length){
+    try{ if (currentView === 'you' && typeof renderYou === 'function') renderYou(); }catch(e){}
+  }
+  return { sent, refused: refused.length, left: remaining.length };
+}
+
+/* A quiet, permanent marker so nobody has to wonder whether the thing they
+   typed in the stairwell actually went. */
+function renderOutboxBadge(n){
+  const el = document.getElementById('outboxBar');
+  if (!el) return;
+  if (!n){ el.hidden = true; return; }
+  el.hidden = false;
+  el.querySelector('.ob-text').textContent =
+    n === 1 ? '1 submission waiting for signal' : `${n} submissions waiting for signal`;
+}
+
+addEventListener('online', () => { flushOutbox({ quiet: false }); });
 
 /* Postgres speaks in codes. Turn the ones a student can actually cause into
    something that reads like an answer rather than a stack trace.
@@ -3290,9 +3848,12 @@ async function insertRow(table, row){
   throw new Error('schema-mismatch');
 }
 
-async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
+/* Split out from postRating so the network path and the outbox build the same
+   row from the same code. Two places constructing the same insert is how a
+   queued submission ends up subtly different from a live one. */
+function buildRatingRow({ rating, comment, hall, menu, day, meal, dateISO }){
   const user = requireSession();
-  await insertRow('ratings', {
+  return {
     // `user_id` is NOT NULL on the live table — a fact the local replica used to
     // develop the migration got wrong, so dropping it here failed every insert
     // with a constraint violation. It holds the same value as student_id now
@@ -3306,13 +3867,17 @@ async function postRating({ rating, comment, hall, menu, day, meal, dateISO }){
     served_on:  dateISO,        // the field that makes every rule enforceable
     day,                        // kept so the table stays readable at a glance
     score:      rating,
-    comment:    comment || null
-  });
+    comment:    capText(comment, TEXT_CAPS.comment) || null
+  };
 }
 
-async function postComplaint({ hall, comment, ref }){
+async function postRating(args){
+  await insertRow('ratings', buildRatingRow(args));
+}
+
+function buildComplaintRow({ hall, comment, ref, photo_url }){
   const user = requireSession();
-  await insertRow('complaints', {
+  return {
     // `mess` is gone — dropped from the table on 2026-09-22, which is the end
     // state the migration was aiming at. It carried two different meanings (10
     // rows saying north/south, 3 saying g/ab) and `hall` replaced it, backfilled
@@ -3322,11 +3887,16 @@ async function postComplaint({ hall, comment, ref }){
     roll:       identity ? identity.roll : null,
     full_name:  identity ? identity.name : null,
     hall,
-    comment,
+    comment:    capText(comment, TEXT_CAPS.complaint),
+    photo_url:  photo_url || null,
     ref,                        // now actually stored — the reference number the
     served_on:  todayISO(),     // student is shown has never referred to anything
     status:     'submitted'
-  });
+  };
+}
+
+async function postComplaint(args){
+  await insertRow('complaints', buildComplaintRow(args));
 }
 
 /* ---------------- WHAT THE HOSTEL THOUGHT (the real averages) ----------------
@@ -3427,13 +3997,14 @@ const FB_PLACEHOLDERS = {
   idea: "What would you add or change?"
 };
 let fbContext = null;
+let fbRef = null;
 const FB_KIND_LABELS = { menu:'Menu correction', app:'Problem with the app', idea:'Suggestion' };
 const FB_KIND_ICONS  = { menu:'📋', app:'🐞', idea:'💡' };
 
 /* Bump alongside CACHE_VERSION in sw.js. It rides along on every bug report,
    which is the difference between "the Week tab was blank" and "the Week tab
    was blank on v29" — the second one can be checked against a diff. */
-const APP_VERSION = 'v30';
+const APP_VERSION = 'v34';
 
 // Everything is behind the sign-in lock, so this only fires when a session has
 // expired while the app sat open — rare, and confusing without a message.
@@ -3475,6 +4046,7 @@ function openFeedback(kind, context){
   document.getElementById('fbLoading').classList.remove('show');
   document.getElementById('feedbackBackdrop').classList.add('show');
   document.getElementById('feedbackSheet').classList.add('show');
+  onSheetOpened('feedbackSheet', closeFeedback);
   setTimeout(() => { try{ document.getElementById('fbMessage').focus(); }catch(e){} }, 260);
 }
 
@@ -3489,7 +4061,9 @@ function applyFeedbackKind(){
 function closeFeedback(){
   document.getElementById('feedbackBackdrop').classList.remove('show');
   document.getElementById('feedbackSheet').classList.remove('show');
+  onSheetClosed('feedbackSheet');
   fbContext = null;
+  fbRef = null;          // next sheet, next reference
 }
 
 // Named submitFeedback2 because submitFeedback() has meant "send a star rating"
@@ -3503,7 +4077,12 @@ async function submitFeedback2(){
   if (btn) btn.disabled = true;
   document.getElementById('fbLoading').classList.add('show');
 
-  const ref = newComplaintRef();
+  // One reference per SHEET, not per attempt. A new ref on every tap meant a
+  // retry after a dropped connection landed as a second row — ratings are caught
+  // by their unique index and complaints by the (hall, comment, minute) one, but
+  // feedback had neither. `ref` is unique, so the retry now collides instead.
+  if (!fbRef) fbRef = newComplaintRef();
+  const ref = fbRef;
   try{
     await postFeedback({ kind, message: msg, context: fbContext, ref });
     document.getElementById('fbLoading').classList.remove('show');
@@ -3514,6 +4093,21 @@ async function submitFeedback2(){
     if (typeof renderYou === 'function' && currentView === 'you') renderYou();
   }catch(err){
     document.getElementById('fbLoading').classList.remove('show');
+    if (isNetworkError(err)){
+      const queued = await queueWrite('feedback',
+        buildFeedbackRow({ kind, message: msg, context: fbContext, ref }),
+        { type:'feedback', kind, message: msg, context: fbContext, ref,
+          status:'new', ts: Date.now(), pending: true });
+      if (queued){
+        await addMySubmission({ type:'feedback', kind, message: msg, context: fbContext,
+                                ref, status:'new', ts: Date.now(), pending: true });
+        showToast("No signal — saved. It'll send when you're back online.", 4200);
+        closeFeedback();
+        return;
+      }
+      showErrorToast("No signal, and there are too many submissions already waiting.");
+      return;
+    }
     const friendly = friendlyWriteError(err);
     showErrorToast(friendly || "Couldn't send that. Try again in a moment.");
   }finally{
@@ -3521,19 +4115,24 @@ async function submitFeedback2(){
   }
 }
 
-async function postFeedback({ kind, message, context, ref }){
+function buildFeedbackRow({ kind, message, context, ref }){
   const user = requireSession();
-  await insertRow('feedback', {
+  return {
     student_id: user.id,
     roll:       identity ? identity.roll : null,
     full_name:  identity ? identity.name : null,
-    kind, message, ref,
+    kind, ref,
+    message:    capText(message, TEXT_CAPS.feedback),
     context:    context || null,
     // What they were running. Two fields turn "it didn't work" into something
     // reproducible, and neither of them identifies anybody.
     app_version: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : null),
     user_agent:  (navigator.userAgent || '').slice(0, 300)
-  });
+  };
+}
+
+async function postFeedback(args){
+  await insertRow('feedback', buildFeedbackRow(args));
 }
 
 /* ---------------- COMPLAINT STATUS (mess committee → student) ----------------
@@ -3572,12 +4171,13 @@ async function fetchComplaintStatuses(refs){
   try{
     const { data, error } = await sb
       .from('complaints')
-      .select('ref,status,committee_note')
+      .select('ref,status,committee_note,photo_url')
       .in('ref', refs);
     if (error || !data) return {};
     const out = {};
     data.forEach(r => {
-      if (r.ref) out[r.ref] = { status: r.status || 'submitted', note: r.committee_note || '' };
+      if (r.ref) out[r.ref] = { status: r.status || 'submitted', note: r.committee_note || '',
+                                                  photo: r.photo_url || null };
     });
     return out;
   }catch(e){
@@ -3629,6 +4229,29 @@ async function submitFeedback(){
   }catch(e){
     showSheetLoading('feedbackLoading', false);
     if (btn) btn.disabled = false;
+
+    // No signal. Keep it rather than losing it — this is the common case in a
+    // dining hall, not an edge case.
+    if (isNetworkError(e)){
+      const queued = await queueWrite('ratings',
+        buildRatingRow({ rating, comment, hall, menu, day, meal, dateISO }),
+        { type:'rating', hall, menu, day, meal, rating, comment, ts: Date.now(), pending: true });
+      if (queued){
+        await markRated(mess, dateISO, meal);
+        if (window.storage){
+          try{ await saveFeedback(menu, day, meal, rating, comment); }catch(err){ /* non-fatal */ }
+        }
+        await addMySubmission({ type:'rating', hall, menu, day, meal, rating, comment,
+                                ts: Date.now(), pending: true });
+        showToast("No signal — saved. It'll send when you're back online.", 4200);
+        closeSheet();
+        if (menu === state.mess && day === state.day) renderMain();
+        return;
+      }
+      showErrorToast("No signal, and there are too many submissions already waiting.");
+      return;
+    }
+
     const nice = friendlyWriteError(e);
     if (nice === "You've already rated this meal — thanks!"){
       // The database just told us something this device did not know — most likely
@@ -3817,75 +4440,138 @@ async function initSwipeHint(){
   });
 })();
 
+/* ================= COMPLAINT PHOTOS =================
+
+   The bucket is PRIVATE (08_photos.sql). A complaint photo shows a specific
+   mess on a specific day and is attached to a named student, so a public bucket
+   would mean a guessable URL serves it to anyone. Objects live at
+   `<student_id>/<ref>.jpg`, which is also what the insert policy checks — the
+   first path segment must be your own uid, so one account cannot upload into
+   another's folder.
+
+   What is stored in `complaints.photo_url` is that PATH, not a URL. URLs here
+   expire; the path does not. Reading signs it on demand. */
+const PHOTO_MAX_EDGE = 1280;      // a 12MP photo is 4000px wide and says nothing extra
+const PHOTO_QUALITY  = 0.72;      // lands around 80-150 KB for a phone camera
+let complaintPhotoData = null;    // compressed data URL, or null
+
+/* Down-scale and re-encode in the browser. Uploading a 4 MB original over
+   hostel wifi is how a complaint times out; this is the difference between a
+   two-second upload and a failed one. */
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('unreadable'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('not-an-image'));
+      img.onload = () => {
+        try{
+          let { width: w, height: h } = img;
+          const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(w, h));
+          w = Math.round(w * scale); h = Math.round(h * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          const g = c.getContext('2d');
+          g.drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL('image/jpeg', PHOTO_QUALITY));
+        }catch(err){ reject(err); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function updatePhotoPreview(){
+  const img = document.getElementById('photoPreview');
+  const rm  = document.getElementById('photoRemoveBtn');
+  const note = document.getElementById('photoNote');
+  const has = !!complaintPhotoData;
+  if (img){ img.src = has ? complaintPhotoData : ''; img.style.display = has ? 'block' : 'none'; }
+  if (rm) rm.style.display = has ? 'inline' : 'none';
+  if (note){
+    note.textContent = has
+      ? (navigator.onLine === false
+          ? 'No signal — the photo will be sent with the report once you are back online.'
+          : `About ${Math.round(complaintPhotoData.length * 0.75 / 1024)} KB. Only you and the mess committee can see it.`)
+      : '';
+  }
+}
+
+function removePhoto(){
+  complaintPhotoData = null;
+  const inp = document.getElementById('photoInput');
+  if (inp) inp.value = '';
+  updatePhotoPreview();
+}
+
+async function handlePhotoSelect(e){
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (!/^image\//.test(file.type)){
+    showToast("That doesn't look like a photo.");
+    removePhoto();
+    return;
+  }
+  try{
+    complaintPhotoData = await compressImage(file);
+    updatePhotoPreview();
+  }catch(err){
+    complaintPhotoData = null;
+    updatePhotoPreview();
+    showToast("Couldn't read that photo — try another.");
+  }
+}
+
+/* Upload, then return the PATH to store. Throws on failure, and the caller
+   decides — a photo that will not upload must never take the complaint down
+   with it. */
+async function uploadComplaintPhoto(dataUrl, ref){
+  const user = requireSession();
+  const blob = await (await fetch(dataUrl)).blob();
+  const path = `${user.id}/${ref}.jpg`;
+  const { error } = await sb.storage.from('complaint-photos')
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  if (error) throw error;
+  return path;
+}
+
+/* The bucket is private, so nothing can be rendered from a bare path. Signed
+   URLs are short-lived on purpose; they are minted when something is actually
+   about to be looked at. */
+const signedPhotoCache = {};
+async function signedPhotoUrl(path){
+  if (!path || !sb || !session) return null;
+  const hit = signedPhotoCache[path];
+  if (hit && hit.until > Date.now()) return hit.url;
+  try{
+    const { data, error } = await sb.storage.from('complaint-photos')
+      .createSignedUrl(path, 600);
+    if (error || !data) return null;
+    signedPhotoCache[path] = { url: data.signedUrl, until: Date.now() + 540000 };
+    return data.signedUrl;
+  }catch(e){ return null; }
+}
+
 /* ---------------- COMPLAINT SHEET ---------------- */
-let complaintPhotoData = null; // compressed base64 jpeg, or null
 
 function openComplaintSheet(){
   requireIdentity(() => {
     document.getElementById('cMess').value = REVIEW_MESSES[0].value;
     document.getElementById('cComment').value = "";
-    document.getElementById('photoInput').value = "";
-    complaintPhotoData = null;
-    updatePhotoPreview();
+    removePhoto();
     renderWhoami();
     showSheetLoading('complaintLoading', false);
     document.getElementById('complaintBackdrop').classList.add('show');
     document.getElementById('complaintSheet').classList.add('show');
+  onSheetOpened('complaintSheet', closeComplaintSheet);
   });
 }
 function closeComplaintSheet(){
   document.getElementById('complaintBackdrop').classList.remove('show');
   document.getElementById('complaintSheet').classList.remove('show');
-}
-function updatePhotoPreview(){
-  const img = document.getElementById('photoPreview');
-  const rm = document.getElementById('photoRemoveBtn');
-  if (complaintPhotoData){
-    img.src = complaintPhotoData;
-    img.style.display = 'block';
-    rm.style.display = 'inline';
-  }else{
-    img.style.display = 'none';
-    rm.style.display = 'none';
-  }
-}
-function removePhoto(){
-  complaintPhotoData = null;
-  document.getElementById('photoInput').value = "";
-  updatePhotoPreview();
-}
-// Downscale + JPEG-compress before storing, so a full-res phone photo doesn't blow past storage limits.
-function compressImage(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 900;
-        let { width, height } = img;
-        if (width > height && width > maxDim){ height = Math.round(height * maxDim / width); width = maxDim; }
-        else if (height > maxDim){ width = Math.round(width * maxDim / height); height = maxDim; }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-async function handlePhotoSelect(e){
-  const file = e.target.files[0];
-  if (!file) return;
-  try{
-    complaintPhotoData = await compressImage(file);
-    updatePhotoPreview();
-  }catch(err){
-    showToast("Couldn't read that photo — try another.");
-  }
+  onSheetClosed('complaintSheet');
 }
 // Short, quotable reference so a student can follow a complaint up with the mess committee
 // by name — e.g. "PSG-M4X7K2-A9".
@@ -3904,33 +4590,74 @@ async function submitComplaint(){
   }
 
   const ref = newComplaintRef();
+  const photo = complaintPhotoData;          // captured now; the sheet may close under us
   showSheetLoading('complaintLoading', true);
 
   const cbtn = document.querySelector('#complaintSheet .submit');
   if (cbtn) cbtn.disabled = true;
+
+  /* The photo goes up FIRST, because a complaint row pointing at an object that
+     was never uploaded is worse than a complaint with no photo. If the upload
+     fails for any reason other than the network, the report still goes — losing
+     the photo is bad, losing the report is worse — and the student is told. */
+  let photoPath = null, photoDropped = null;
+  if (photo){
+    try{
+      photoPath = await uploadComplaintPhoto(photo, ref);
+    }catch(err){
+      // A network failure here means the queue should handle it, which the
+      // insert below will trigger. Anything else is the photo's problem alone.
+      if (!isNetworkError(err)) photoDropped = 'upload';
+    }
+  }
+
   try{
-    await withMinLoadingTime(postComplaint({ hall: mess, comment, ref }), 500);
+    if (photo && !photoPath && !photoDropped) throw new TypeError('Failed to fetch');
+    await withMinLoadingTime(
+      postComplaint({ hall: mess, comment, ref, photo_url: photoPath }), 500);
   }catch(e){
     showSheetLoading('complaintLoading', false);
     if (cbtn) cbtn.disabled = false;
+    if (isNetworkError(e)){
+      // The photo cannot ride in localStorage indefinitely, so the queue takes
+      // it only within a budget and says plainly when it could not.
+      const kept = photo ? await photoFitsInOutbox(photo) : false;
+      const queued = await queueWrite('complaints',
+        buildComplaintRow({ hall: mess, comment, ref, photo_url: photoPath }),
+        { type:'complaint', mess, comment, ref, status:'submitted', ts: Date.now(),
+          pending: true, hasPhoto: !!(photo && kept) },
+        (photo && kept && !photoPath) ? { photo, ref } : null);
+      if (queued){
+        await addMySubmission({ type:'complaint', mess, comment, ref,
+                                status:'submitted', ts: Date.now(), pending: true,
+                                hasPhoto: !!(photo && kept) });
+        showToast(photo && !kept
+          ? `No signal — report saved as ${ref}, but the photo could not be kept. Add it again later.`
+          : `No signal — saved as ${ref}. It'll send when you're back online.`, 5600);
+        closeComplaintSheet();
+        return;
+      }
+      showErrorToast("No signal, and there are too many submissions already waiting.");
+      return;
+    }
     showErrorToast(friendlyWriteError(e) || "Couldn't reach the server — try again.");
     return;
   }
   if (cbtn) cbtn.disabled = false;
 
-  // Secondary: best-effort local cache, powers "My submissions" and the shared in-app view if present.
-  if (window.storage){
-    try{
-      const record = { mess, comment, photo: complaintPhotoData, ts: Date.now(), ref };
-      const key = `complaint_${Date.now()}_${Math.floor(Math.random()*1000)}`;
-      await window.storage.set(key, JSON.stringify(record), true);
-    }catch(e){ /* non-fatal */ }
-  }
+  // The per-complaint localStorage record that used to live here is gone with the
+  // photo it existed to hold: one unbounded key per complaint, never cleaned up.
+  // addMySubmission() below already keeps what the You tab needs, in one key.
 
-  addMySubmission({ type:'complaint', mess, comment, ref, status:'submitted', ts: Date.now() });
+  addMySubmission({ type:'complaint', mess, comment, ref, status:'submitted',
+                    ts: Date.now(), hasPhoto: !!photoPath });
   showSheetLoading('complaintLoading', false);
   haptic(12);
-  showToast(`Complaint sent · ${ref}`);
+  // If the photo did not make it, say so here rather than letting "sent" cover
+  // for both outcomes — that conflation is what made the old button dishonest.
+  if (photoDropped) showErrorToast(`Report sent · ${ref} — but the photo wouldn't upload.`);
+  else showToast(`Complaint sent · ${ref}`);
+  removePhoto();
   closeComplaintSheet();
 }
 
@@ -3962,6 +4689,9 @@ async function openMySubmissions(){
   body.innerHTML = `<div class="empty-note">Loading…</div>`;
   document.getElementById('mySubBackdrop').classList.add('show');
   document.getElementById('mySubSheet').classList.add('show');
+  // The sixth sheet, and the one that was never registered — so Android's back
+  // button walked out of the app while it was open, and focus stayed behind it.
+  onSheetOpened('mySubSheet', closeMySubmissions);
 
   const list = await getMySubmissions();
   if (!list.length){
@@ -4021,6 +4751,7 @@ async function openMySubmissions(){
 function closeMySubmissions(){
   document.getElementById('mySubBackdrop').classList.remove('show');
   document.getElementById('mySubSheet').classList.remove('show');
+  onSheetClosed('mySubSheet');
 }
 
 
@@ -4459,6 +5190,7 @@ async function renderYou(){
   const list = await getMySubmissions();
   const ratings = list.filter(x => x.type === 'rating');
   const reports = list.filter(x => x.type === 'complaint');
+  renderOutboxBadge((await getOutbox()).length);
 
   // What status to show for a complaint: the committee's answer if we have it,
   // otherwise whatever was stored locally at submit time.
@@ -4511,9 +5243,9 @@ async function renderYou(){
           ? `${c.day || ''} ${(GENERIC_MEAL_LABELS[c.meal] || c.meal || '').toLowerCase()} · ${menuLabelFor(c.menu) || ''}`
           : (FB_KIND_LABELS[it.kind] || 'Feedback');
         const reply = (it.ref && statuses[it.ref] && statuses[it.ref].note) || it.reply || '';
-        return `<div class="mysub-item">
+        return `<div class="mysub-item${it.pending ? ' pending' : ''}">
           <div class="mysub-top">
-            <span>${FB_KIND_ICONS[it.kind] || '💬'} ${escapeHtml(FB_KIND_LABELS[it.kind] || 'Feedback')}</span>
+            <span>${FB_KIND_ICONS[it.kind] || '💬'} ${escapeHtml(FB_KIND_LABELS[it.kind] || 'Feedback')}${it.pending ? '<span class="pending-tag">waiting</span>' : ''}</span>
             <span class="mysub-when">${formatWhen(it.ts)}</span>
           </div>
           ${c ? `<div class="mysub-comment" style="color:var(--faint);margin-top:4px">${escapeHtml(about)}</div>` : ''}
@@ -4523,9 +5255,9 @@ async function renderYou(){
       }
       if (it.type === 'rating'){
         const place = it.hall ? `${messLabelFor(it.hall)} · ${menuLabelFor(it.menu)}` : messLabelFor(it.mess);
-        return `<div class="mysub-item">
+        return `<div class="mysub-item${it.pending ? ' pending' : ''}">
           <div class="mysub-top">
-            <span>${'★'.repeat(it.rating)}<span style="color:var(--faint)">${'★'.repeat(5-it.rating)}</span> · ${place}</span>
+            <span>${'★'.repeat(it.rating)}<span style="color:var(--faint)">${'★'.repeat(5-it.rating)}</span> · ${place}${it.pending ? '<span class="pending-tag">waiting</span>' : ''}</span>
             <span class="mysub-when">${formatWhen(it.ts)}</span>
           </div>
           <div class="mysub-comment" style="color:var(--faint);margin-top:4px">${GENERIC_MEAL_LABELS[it.meal] || it.meal}</div>
@@ -4535,9 +5267,9 @@ async function renderYou(){
       const live = (it.ref && statuses[it.ref]) || null;
       const status = statusOf(it, statuses);
       const note = live && live.note ? live.note : '';
-      return `<div class="mysub-item">
+      return `<div class="mysub-item${it.pending ? ' pending' : ''}">
         <div class="mysub-top">
-          <span>⚠️ ${messLabelFor(it.mess)}</span>
+          <span>⚠️ ${messLabelFor(it.mess)}${it.pending ? '<span class="pending-tag">waiting</span>' : ''}</span>
           <span class="mysub-when">${formatWhen(it.ts)}</span>
         </div>
         <div class="mysub-comment">${escapeHtml(it.comment)}</div>
@@ -4545,6 +5277,9 @@ async function renderYou(){
           <span class="status-chip ${status}">${STATUS_LABELS[status] || 'Submitted'}</span>
           ${it.ref ? `<span class="mysub-ref">REF ${escapeHtml(it.ref)}</span>` : ''}
         </div>
+        ${(live && live.photo) || it.hasPhoto
+            ? `<img class="mysub-photo" alt="The photo you attached"
+                    data-photo="${escapeHtml((live && live.photo) || '')}">` : ''}
         ${note ? `<div class="status-note">"${escapeHtml(note)}"</div>` : ''}
       </div>`;
     }).join('');
@@ -4563,6 +5298,7 @@ async function renderYou(){
     const statuses = Object.assign({}, complaintStatuses, feedbackReplies);
     if (Object.keys(statuses).length){
       paint(statuses);
+      hydratePhotos();
       paintStats(statuses);
       // Keep the latest known status locally so the count is right offline too,
       // and so the next paint doesn't start from the stale one again.
@@ -4579,6 +5315,22 @@ async function renderYou(){
         try{ await window.storage.set('my_submissions', JSON.stringify(updated), false); }catch(e){ /* non-fatal */ }
       }
     }
+  }
+}
+
+
+/* Nothing can render from a bare object path, so each thumbnail asks for a
+   signed URL after the list is painted. After, rather than during, so a slow
+   signing call never holds up the rest of the tab. */
+async function hydratePhotos(){
+  const imgs = [...document.querySelectorAll('.mysub-photo[data-photo]')];
+  for (const img of imgs){
+    const path = img.getAttribute('data-photo');
+    img.removeAttribute('data-photo');
+    if (!path){ img.classList.add('waiting'); continue; }   // queued, not uploaded yet
+    const url = await signedPhotoUrl(path);
+    if (url){ img.src = url; img.classList.add('ready'); }
+    else img.remove();
   }
 }
 
