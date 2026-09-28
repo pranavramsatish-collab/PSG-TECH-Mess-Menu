@@ -2810,9 +2810,11 @@ async function renderMain(){
   const main = document.getElementById('main');
   const frag = document.createDocumentFragment();
 
-  const fb = await getFeedback(state.mess, state.day); // {breakfast:[{rating,comment,ts}], ...}
   // The date on the rail IS the date being rated. No quiet remapping to last week.
   const mappedDateISO = isoOfThisWeek(state.day);
+  // Must be fetched FOR that date. The store is keyed by weekday, and a weekday
+  // comes round again every seven days — see getFeedback().
+  const fb = await getFeedback(state.mess, state.day, mappedDateISO);
   const combos = await getRatedCombos();
 
   ensureMealRatings(state.mess, mappedDateISO);   // not awaited: paint first
@@ -3078,29 +3080,67 @@ async function markRated(mess, dateISO, meal){
 }
 
 
-async function getFeedback(mess, day){
-  const cacheKey = mess + "_" + day;
-  if (state.feedbackCache[cacheKey]) return state.feedbackCache[cacheKey];
-  try{
-    const res = await window.storage.get(fbKey(mess, day), true);
-    const val = res && res.value ? JSON.parse(res.value) : {};
-    state.feedbackCache[cacheKey] = val;
-    return val;
-  }catch(e){
-    state.feedbackCache[cacheKey] = {};
-    return {};
-  }
+/* ---- The student's own ratings, played back on the card ----
+
+   THE KEY IS A WEEKDAY, AND A WEEKDAY COMES ROUND AGAIN EVERY SEVEN DAYS.
+
+   That is the whole bug this guards against. `feedback_south_Monday` was written
+   on 21 September and read again on 28 September, so a student who had not eaten
+   yet — the dinner card still said "Opens in 1 hr 24 min" — was shown ★3.0 and
+   his own comment about food that had not been cooked. Worse, the card averaged
+   every Monday he had ever rated: one star last week and five stars today
+   displayed as a confident 3.0.
+
+   The lock that stops double-rating was never fooled — `comboId()` has always
+   carried the date. Only the display was.
+
+   Fixed by stamping each entry with the date of the meal it is about and
+   returning only that date's. The key stays a weekday on purpose: it keeps this
+   to fourteen storage slots rather than one per day forever, and filtering on
+   the way in and out keeps each slot to a single day's entries.
+
+   Entries written before this version have no `servedOn` and are dropped. They
+   are either last week's — which is the bug — or a few hours old, and a rating
+   made today is safe in the database and in My submissions either way. Guessing
+   from `ts` would be wrong exactly where it matters: last night's dinner rated
+   over breakfast carries the next morning's timestamp. */
+function entriesForDate(all, dateISO){
+  const out = {};
+  Object.keys(all || {}).forEach(meal => {
+    const list = Array.isArray(all[meal]) ? all[meal] : [];
+    const keep = list.filter(e => e && e.servedOn === dateISO);
+    if (keep.length) out[meal] = keep;
+  });
+  return out;
 }
 
-async function saveFeedback(mess, day, meal, rating, comment){
+async function getFeedback(mess, day, dateISO){
+  const cacheKey = mess + "_" + day;
+  let all = state.feedbackCache[cacheKey];
+  if (!all){
+    try{
+      const res = await window.storage.get(fbKey(mess, day), true);
+      all = (res && res.value) ? JSON.parse(res.value) : {};
+    }catch(e){ all = {}; }
+    state.feedbackCache[cacheKey] = all;
+  }
+  // No date asked for means no claim can be made about which day these belong to.
+  return dateISO ? entriesForDate(all, dateISO) : {};
+}
+
+async function saveFeedback(mess, day, meal, rating, comment, dateISO){
+  if (!dateISO) return;            // an entry with no date is the bug, not a record
   const key = fbKey(mess, day);
   let current = {};
   try{
     const res = await window.storage.get(key, true);
     current = res && res.value ? JSON.parse(res.value) : {};
   }catch(e){ current = {}; }
+  // This weekday's slot is reused every seven days, so whatever is in it for any
+  // other date is last week's. Dropping it here is what keeps the slot small.
+  current = entriesForDate(current, dateISO);
   if (!current[meal]) current[meal] = [];
-  current[meal].push({ rating, comment: comment || "", ts: Date.now() });
+  current[meal].push({ rating, comment: comment || "", ts: Date.now(), servedOn: dateISO });
   await window.storage.set(key, JSON.stringify(current), true);
   state.feedbackCache[mess + "_" + day] = current;
 }
@@ -4004,7 +4044,7 @@ const FB_KIND_ICONS  = { menu:'📋', app:'🐞', idea:'💡' };
 /* Bump alongside CACHE_VERSION in sw.js. It rides along on every bug report,
    which is the difference between "the Week tab was blank" and "the Week tab
    was blank on v29" — the second one can be checked against a diff. */
-const APP_VERSION = 'v35';
+const APP_VERSION = 'v36';
 
 // Everything is behind the sign-in lock, so this only fires when a session has
 // expired while the app sat open — rare, and confusing without a message.
@@ -4239,7 +4279,7 @@ async function submitFeedback(){
       if (queued){
         await markRated(mess, dateISO, meal);
         if (window.storage){
-          try{ await saveFeedback(menu, day, meal, rating, comment); }catch(err){ /* non-fatal */ }
+          try{ await saveFeedback(menu, day, meal, rating, comment, dateISO); }catch(err){ /* non-fatal */ }
         }
         await addMySubmission({ type:'rating', hall, menu, day, meal, rating, comment,
                                 ts: Date.now(), pending: true });
@@ -4272,7 +4312,7 @@ async function submitFeedback(){
   // Keyed by menu (north/south), matching how the home-screen average badge looks it up.
   // This is best-effort — if it's unavailable (e.g. viewing the file outside claude.ai), skip it silently.
   if (window.storage){
-    try{ await saveFeedback(menu, day, meal, rating, comment); }
+    try{ await saveFeedback(menu, day, meal, rating, comment, dateISO); }
     catch(e){ /* non-fatal */ }
   }
   addMySubmission({ type:'rating', hall, menu, day, meal, rating, comment, ts: Date.now() });
