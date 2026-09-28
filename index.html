@@ -2258,11 +2258,11 @@ const MENU = {
     label: "North Indian Mess",
     mealLabels: MEAL_LABELS,
     mealTimes: {breakfast:"7:30 – 9:30 AM", lunch:"12:00 – 2:00 PM", evening:"4:30 – 6:00 PM", dinner:"7:30 – 9:30 PM"},
-    common: {breakfast:"Always available: Tea, Coffee, Milk, Bread Toast, Butter & Jam", evening:"Banana (1) served daily · alternate varieties: Karpuravalli / Poovan / Morris / Red Banana"},
+    common: {breakfast:"Always available: Tea, Coffee, Milk, Bread Toast, Butter & Jam"},
     days: {
       Monday:{ breakfast:["Cabbage Paratha","Choley","Suji Halwa","Curd","Daliya","Boiled Egg"],
         lunch:["Patta Gobi Aloo","Dal","Rice","Salad","Papad","Omelette","Roti","Salad Raitha","Lemon Juice"],
-        evening:["Chat Papdi","Ginger Tea","Coffee","Milk"],
+        evening:["Green Gram","Ginger Tea","Coffee","Milk"],
         dinner:["Romali Roti","Mixed Veg Salna","Salad Raitha","Kheer","Egg Gravy","Plain Rice","Dal"] },
       Tuesday:{ breakfast:["Plain Paratha","Daliya","Poha","Boiled Egg"],
         lunch:["Kashmiri Channa","Dal Tadka","Puri","Rice","Salad","Sweet","Papad","Boiled Egg","Butter Milk"],
@@ -2270,11 +2270,11 @@ const MENU = {
         dinner:["Tandoori Roti","Mattar Paneer","Chilli Gobi","Rice","Dal Tadka"] },
       Wednesday:{ breakfast:["Aata / Channa Halwa","Poha","Onion Paratha","Boiled Egg"],
         lunch:["Aloo Gobi","Plain Paratha","Channa Dal","Salad","Omelette","Salad Raitha","Rice"],
-        evening:["Cutlet (1)","Tea","Milk","Sukku Coffee"],
+        evening:["Cutlet (1) & Sauce","Tea","Coffee","Milk"],
         dinner:["Naan","Palak Paneer","Raitha","Butter Chicken Gravy","Rice","Dal Tadka"] },
       Thursday:{ breakfast:["Onion Paratha","Curd","Daliya","Boiled Egg"],
         lunch:["Roti","Rice","Dhal Makhni","Bottleguard Sabzi","Salad","Boiled Egg","Salt Lassi","Brinjal Fry","Icecream"],
-        evening:["Aloo Samosa (1)","Tea","Milk","Coffee"],
+        evening:["Potato Samosa (1)","Tea","Milk","Coffee"],
         dinner:["Choley Kulcha","Chilli Paneer","Panner Tikka","Carrot Halwa","Dal Tadka","Rice"] },
       Friday:{ breakfast:["Plain Paratha","Choley","Daliya","Curd","Boiled Egg"],
         lunch:["Roti","Chhota Nutry Aloo","Raitha","Salad","Omelette","Lemon Juice"],
@@ -2282,11 +2282,11 @@ const MENU = {
         dinner:["Tandoori Roti","Raitha","Rice","Paneer Makhna","Chicken Dou Pyaaza","Omelette","Gulab Jamun"] },
       Saturday:{ breakfast:["Roti","Bun Maska","Daliya","Boiled Egg"],
         lunch:["Veg Biriyani","Rice","Dal","Salt Lassi","Omelette","Kaala Channa","Plain Paratha","Raitha"],
-        evening:["Pakoda / Bajji","Tea","Coffee","Milk"],
+        evening:["Medhu Pakoda / Banana Bajji (2)","Chutney","Tea","Coffee","Milk"],
         dinner:["Dry Gobi Tamatar","Dal Tadka","Bread Halwa","Papad","Rice"] },
       Sunday:{ breakfast:["Aloo Paratha & Tamatar Chutney","Choley","Curd","Daliya","Boiled Egg"],
         lunch:["Tandoori Roti","Rice","Aloo Capsicum","Paneer Kurma","Salad","Raitha","Boiled Egg","Schezwan Chicken"],
-        evening:["Groundnut Salad","Tea","Coffee","Milk"],
+        evening:["Peanut Salad","Tea","Milk","Chukku Coffee"],
         dinner:["Naan","Dal Tadka","Raitha","Rice","Egg Gravy","Moong Dal Halwa","Rajma"] }
     }
   },
@@ -2294,11 +2294,11 @@ const MENU = {
     label: "South Indian Mess",
     mealLabels: MEAL_LABELS,
     mealTimes: {breakfast:"7:30 – 9:30 AM", lunch:"12:00 – 2:00 PM", evening:"4:30 – 6:00 PM", dinner:"7:30 – 9:30 PM"},
-    common: {breakfast:"Always available: Tea, Coffee, Milk, Bread & Jam", dinner:"Always with dinner: Rice, Rasam, Curd Rice, Banana (1)"},
+    common: {breakfast:"Always available: Tea, Coffee, Milk, Bread & Jam", dinner:"Always with dinner: Rice, Rasam, Curd Rice"},
     days: {
       Monday:{ breakfast:["Idli","Urad Dal Vada (1)","Mix Veg Sambar","Idli Podi","Rava Upma","Mint Chutney","Ragi Porridge","Sesame Oil"],
         lunch:["Sambar","Rice","Rasam","Curd","Beetroot Fry","Boiled Egg (Full)","Ghee","Lemon Juice","Vegetable Salad","Dal Powder","Tapioca Chips","Buttermilk Chilli"],
-        evening:["Masala Vada (1)","Ginger Tea","Coffee","Milk"],
+        evening:["Green Gram","Ginger Tea","Coffee","Milk"],
         dinner:["Rumali Roti (3)","Tamarind Rice","Paneer Butter Masala","Boiled Egg","Egg Gravy (2)","Coconut Chutney","Pickle"] },
       Tuesday:{ breakfast:["Idiyappam","Coconut Milk","Sweet Pongal","Rava Khichdi","Coconut Chutney","Ragi Porridge","Vegetable Salad","Almond Milk"],
         lunch:["Sweet","Soya Biryani","Veg Guruma","Curd Pachadi","Rice","Rasam","Curd","Boiled Egg","Potato Chips","Tomato Pickle","Buttermilk Chilli"],
@@ -4004,7 +4004,7 @@ const FB_KIND_ICONS  = { menu:'📋', app:'🐞', idea:'💡' };
 /* Bump alongside CACHE_VERSION in sw.js. It rides along on every bug report,
    which is the difference between "the Week tab was blank" and "the Week tab
    was blank on v29" — the second one can be checked against a diff. */
-const APP_VERSION = 'v34';
+const APP_VERSION = 'v35';
 
 // Everything is behind the sign-in lock, so this only fires when a session has
 // expired while the app sat open — rare, and confusing without a message.
