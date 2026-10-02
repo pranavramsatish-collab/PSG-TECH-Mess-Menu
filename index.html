@@ -12,10 +12,47 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mess Menu">
 <meta name="theme-color" content="#12150f" id="themeColorMeta">
+<!-- Canonical, because GitHub Pages will answer on more than one spelling of this
+     URL (with and without index.html, and the whole path is case-sensitive) and
+     Google should be told which one is the real page. -->
+<link rel="canonical" href="https://pranavramsatish-collab.github.io/PSG-TECH-Mess-Menu/">
+
+<!-- Social preview. og:image MUST be an absolute URL — a relative one works in a
+     browser and is silently dropped by WhatsApp, Telegram and most other
+     scrapers, which is where this link will actually be shared. 1200x630 is the
+     size they crop to; the old 512-square icon was rendered as a tiny thumbnail. -->
 <meta property="og:title" content="PSG Tech Hostel — Mess Menu">
-<meta property="og:description" content="Know what's cooking before you walk down.">
+<meta property="og:description" content="Know what's cooking before you walk down. Both messes, all week, with ratings from the people eating it.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:site_name" content="PSG Tech Mess Menu">
+<meta property="og:url" content="https://pranavramsatish-collab.github.io/PSG-TECH-Mess-Menu/">
+<meta property="og:image" content="https://pranavramsatish-collab.github.io/PSG-TECH-Mess-Menu/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mess Menu — PSG Tech Hostel, North and South Indian">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PSG Tech Hostel — Mess Menu">
+<meta name="twitter:description" content="Know what's cooking before you walk down.">
+<meta name="twitter:image" content="https://pranavramsatish-collab.github.io/PSG-TECH-Mess-Menu/share.png">
+
+<!-- Structured data. Modest benefit on its own, but it is what lets Google show
+     the app as a named thing rather than an untitled page. Everything in it is
+     true: no rating counts, no fake reviews, no invented author. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "PSG Tech Hostel Mess Menu",
+  "url": "https://pranavramsatish-collab.github.io/PSG-TECH-Mess-Menu/",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "description": "Hostel mess menu for PSG College of Technology, Coimbatore. Both the North Indian and South Indian mess, every day of the week, with meal ratings and issue reports from the students eating there.",
+  "inLanguage": "en-IN",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -4076,7 +4113,7 @@ const FB_KIND_ICONS  = { menu:'📋', app:'🐞', idea:'💡' };
 /* Bump alongside CACHE_VERSION in sw.js. It rides along on every bug report,
    which is the difference between "the Week tab was blank" and "the Week tab
    was blank on v29" — the second one can be checked against a diff. */
-const APP_VERSION = 'v37';
+const APP_VERSION = 'v38';
 
 // Everything is behind the sign-in lock, so this only fires when a session has
 // expired while the app sat open — rare, and confusing without a message.
