@@ -565,6 +565,13 @@ a.now-chip.paid:focus-visible{ outline:2px solid #1b1f14; outline-offset:3px; }
   transition:all .18s ease;
 }
 .fchip.on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-deep); }
+/* The ₹ sits in the chip the way the veg square does: a mark, not a word. */
+.rupee{
+  display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  width:17px; height:17px; border-radius:5px; font-size:11px; font-weight:700;
+  background:var(--accent-soft); color:var(--accent-deep); line-height:1;
+}
+.fchip.on .rupee{ background:var(--accent); color:var(--on-accent); }
 /* Stands out while it has somewhere to take you; recedes once you're already there. */
 .today-chip{ background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent-ink); }
 .today-chip.here{ background:var(--surface); border-color:var(--line); color:var(--faint); }
@@ -1165,6 +1172,21 @@ textarea::placeholder{ color:var(--faint); }
 }
 .whoami-cta::after{ content:'›'; font-size:15px; line-height:1; opacity:.75; }
 
+/* The You tab with nobody signed in. */
+.signed-out{
+  text-align:center; padding:34px 22px; margin-top:16px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+}
+.so-ico{
+  width:54px; height:54px; margin:0 auto 16px; border-radius:16px;
+  background:var(--accent-soft); color:var(--accent-deep);
+  display:flex; align-items:center; justify-content:center;
+}
+.signed-out b{ display:block; font-family:'Fraunces',Georgia,serif; font-weight:500;
+  font-size:1.2rem; letter-spacing:-.02em; margin-bottom:9px; }
+.signed-out p{ font-size:13.5px; line-height:1.6; color:var(--muted); margin-bottom:20px; }
+.signed-out .now-btn{ width:100%; max-width:220px; margin:0 auto; }
+
 /* ---------- Toast ---------- */
 .toast{
   position:fixed; left:50%; bottom:calc(var(--tabh) + var(--bot) + 18px);
@@ -1232,7 +1254,14 @@ body.tip-open .toast{ bottom:calc(var(--tabh) + var(--bot) + 84px); }
    stays in the tab order and is still reachable by a screen reader, sitting invisibly on
    top of the app — and Playwright hits it as a real click target too. */
 #lockScreen.hidden{ opacity:0; pointer-events:none; visibility:hidden; }
-.lock-card{ width:100%; max-width:340px; text-align:center; }
+.lock-card{ width:100%; max-width:340px; text-align:center; position:relative; }
+.lock-x{
+  position:absolute; top:-10px; right:-6px; width:40px; height:40px; cursor:pointer;
+  border:0; background:none; color:var(--muted); font-size:26px; line-height:1;
+  border-radius:50%; transition:.2s;
+}
+.lock-x:hover{ color:var(--ink); background:var(--surface-2); }
+.lock-x:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .lock-card.shake{ animation:shake .4s ease; }
 @keyframes shake{ 10%,90%{transform:translateX(-2px);} 20%,80%{transform:translateX(4px);}
   30%,50%,70%{transform:translateX(-8px);} 40%,60%{transform:translateX(8px);} }
@@ -1312,7 +1341,7 @@ body.tip-open .toast{ bottom:calc(var(--tabh) + var(--bot) + 84px); }
 }
 </style>
 </head>
-<body class="locked">
+<body>
 
 <div class="bg-layer">
   <div class="bg-glow g1"></div><div class="bg-glow g2"></div><div class="bg-glow g3"></div>
@@ -1320,7 +1349,10 @@ body.tip-open .toast{ bottom:calc(var(--tabh) + var(--bot) + 84px); }
 <div class="bg-grain"></div>
 
 <!-- ---------------- Lock ---------------- -->
-<div id="lockScreen">
+<!-- Starts HIDDEN. It used to be the first thing on screen and hideLock() took
+     it away; now it is a prompt that showLock() brings up, so the menu is what a
+     visitor sees first and the sign-in screen never flashes past during boot. -->
+<div id="lockScreen" class="hidden">
   <div class="lock-card" id="lockCard">
     <div class="lock-mark">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -1328,15 +1360,20 @@ body.tip-open .toast{ bottom:calc(var(--tabh) + var(--bot) + 84px); }
       </svg>
     </div>
     <div class="lock-title" id="lockTitle">Mess Menu</div>
-    <div class="lock-sub" id="lockSub">Sign in to see the menu, rate meals and report problems.</div>
+    <div class="lock-sub" id="lockSub">Sign in to rate meals and report problems.</div>
+    <!-- The lock became a modal the moment reading stopped needing an account,
+         so it needs a way out. Without this a student who tapped Rate just to
+         see what it did would be trapped on a sign-in screen. -->
+    <button type="button" class="lock-x" id="lockClose" onclick="hideLock()"
+            aria-label="Back to the menu">&times;</button>
 
     <!-- Shown first and replaced once we know whether there is a session, so a
          returning student never sees a sign-in button flash past. -->
     <div id="lockBusy"><span class="spin" aria-hidden="true"></span> Checking your session…</div>
 
     <div id="lockOffline" class="lock-offline" hidden>
-      You're offline, and there's no saved session on this phone. Sign-in needs a
-      connection — the menu will be here once you're back on wifi.
+      You're offline. Signing in needs a connection — but the menu behind this
+      doesn't, so close this and read it.
     </div>
 
     <button class="gbtn" id="googleBtn" type="button" onclick="signInWithGoogle()" hidden>
@@ -1470,6 +1507,9 @@ body.tip-open .toast{ bottom:calc(var(--tabh) + var(--bot) + 84px); }
       </button>
       <button class="fchip" id="vegChip" onclick="toggleVegOnly()">
         <span class="vnv veg"></span> Veg only
+      </button>
+      <button class="fchip" id="paidChip" onclick="togglePaidOnly()">
+        <span class="rupee" aria-hidden="true">&#8377;</span> Paid only
       </button>
       <button class="fchip" id="searchChip" onclick="go('search')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.1"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
@@ -1961,13 +2001,45 @@ function initSupabase(){
   }catch(e){ return null; }
 }
 
-function showLock(){
+function showLock(reason){
+  const sub = document.getElementById('lockSub');
+  if (sub) sub.textContent = reason
+    ? `Sign in ${reason}. The menu stays open either way.`
+    : 'Sign in to rate meals and report problems.';
+  const x = document.getElementById('lockClose');
+  if (x) x.hidden = false;
+
+  /* These three states used to be decided during boot, in the branch that put up
+     the wall. The wall is gone, so the prompt has to work them out when it opens
+     — otherwise an offline student gets a button that cannot do anything and no
+     explanation of why. */
+  const off  = document.getElementById('lockOffline');
+  const btn  = document.getElementById('googleBtn');
+  const busy = document.getElementById('lockBusy');
+  if (busy) busy.hidden = authReady;
+  if (!sb){
+    lockError("Sign-in isn't available — supabase.js didn't load. Reload the page.");
+    if (btn) btn.hidden = true;
+    if (off) off.hidden = true;
+  } else if (!navigator.onLine){
+    lockError('');
+    if (off) off.hidden = false;
+    if (btn) btn.hidden = true;
+  } else {
+    lockError('');
+    if (off) off.hidden = true;
+    if (btn) btn.hidden = !authReady;
+  }
   document.getElementById('lockScreen').classList.remove('hidden');
   document.body.classList.add('locked');
+  // The wordmark and the button rim only animate while this is on screen.
+  try{ if (techText) techText.start(); }catch(e){}
+  try{ if (specRim) specRim.start(); }catch(e){}
 }
 function hideLock(){
   document.getElementById('lockScreen').classList.add('hidden');
   document.body.classList.remove('locked');
+  pendingAfterSignIn = null;   // backing out of the prompt cancels the errand
   // The wordmark's idle sweep would otherwise animate a canvas forever behind
   // the app: `#lockScreen.hidden` is visibility:hidden, which an
   // IntersectionObserver still counts as on screen.
@@ -2121,7 +2193,14 @@ async function bootAuth(){
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION'){
       if (session) afterSignIn();
     }
-    if (event === 'SIGNED_OUT'){ showLock(); lockBusy(false); }
+    // Signing out drops you back to the menu, not to a wall — the menu was
+    // never the thing that needed an account.
+    if (event === 'SIGNED_OUT'){
+      signedInOnce = false;
+      identity = null;
+      lockBusy(false);
+      renderSignedOut();
+    }
   });
 
   authReady = true;
@@ -2129,17 +2208,26 @@ async function bootAuth(){
 
   if (session){
     await afterSignIn();
-  } else if (!navigator.onLine && hasStoredSession()){
-    // Signed in before, no signal now: let them read the cached menu.
-    document.getElementById('lockOffline').hidden = true;
-    hideLock();
   } else {
-    if (!navigator.onLine){
-      document.getElementById('lockOffline').hidden = false;
-      document.getElementById('googleBtn').hidden = true;
-    }
-    showLock();
+    /* NO LOCK. The menu is public now — it is a canteen notice board, not an
+       account. A student who arrives from a search result or a pasted link
+       reads what is for dinner without being asked who they are, and the
+       prompt only appears if they go to rate or report something.
+
+       This is also the only way the page can rank for "psg tech mess menu":
+       behind a sign-in wall the crawlable text was a login screen, with not one
+       dish name in it. */
+    renderSignedOut();
   }
+}
+
+/* Paint the parts that differ when nobody is signed in. Called on boot without a
+   session, and again on sign-out, so the two paths cannot drift apart. */
+function renderSignedOut(){
+  try{ renderWhoami(); }catch(e){}
+  try{ renderAccount(); }catch(e){}
+  try{ renderMain(); }catch(e){}
+  try{ if (currentView === 'you') renderYou(); }catch(e){}
 }
 
 /* Google knows your name and your email. It has no idea what your roll number
@@ -2147,7 +2235,15 @@ async function bootAuth(){
    once, stored on the account rather than the device, and never asked again. */
 let signedInOnce = false;
 async function afterSignIn(){
-  if (signedInOnce) return;
+  // The errand that triggered the prompt runs whether or not this is the first
+  // sign-in of the session, so it sits outside the guard below.
+  const errand = pendingAfterSignIn;
+  pendingAfterSignIn = null;
+  if (signedInOnce){
+    hideLock();
+    if (errand) setTimeout(errand, 260);
+    return;
+  }
   signedInOnce = true;
   // Before anything reads the cache: is it even ours? Must run ahead of
   // loadIdentity(), which would otherwise adopt the previous student's name.
@@ -2164,13 +2260,14 @@ async function afterSignIn(){
   // Anything saved while offline goes out now that there is a session to send
   // it as. Quiet on boot — nobody wants a toast for something they did yesterday.
   flushOutbox({ quiet: true });
-  if (!identity || !identity.roll){
+  // Whatever they were trying to do when the prompt appeared. The identity
+  // sheet, if it is needed, opens from inside requireIdentity on the way.
+  if (errand){
+    setTimeout(errand, 300);
+  } else if (!identity || !identity.roll){
     // Give the lock screen time to fade before another panel slides up.
     setTimeout(() => openIdentity(), 420);
   }
-  // First run on this device only: say where the light/dark control lives. If the
-  // identity sheet is up by now this defers itself and returns when it closes.
-  setTimeout(maybeShowThemeTip, 900);
 }
 
 /* ---------------- THEME (light / dark) ---------------- */
@@ -2611,6 +2708,7 @@ let todayName = DAYS[now.getDay()];
    script after it: no router, no boot, a blank app. Shared mutable state gets declared
    before anything can reach it. */
 let vegOnly = false;
+let paidOnly = false;
 
 let state = {
   mess: "north",
@@ -2707,7 +2805,15 @@ addEventListener('popstate', () => {
 
 // Escape, for anyone on a keyboard.
 addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || !sheetStack.length) return;
+  if (e.key !== 'Escape') return;
+  // The sign-in prompt is a modal now, so Escape has to get out of it too.
+  const lock = document.getElementById('lockScreen');
+  if (lock && !lock.classList.contains('hidden') && !sheetStack.length){
+    e.preventDefault();
+    hideLock();
+    return;
+  }
+  if (!sheetStack.length) return;
   e.preventDefault();
   history.back();
 });
@@ -2967,8 +3073,10 @@ async function renderMain(){
     // who forgot the filter was on reads the menu as "no egg today".
     const shownItems = visibleItems(items);
     const hiddenCount = items.length - shownItems.length;
+    // Name the filter that did it. "3 items hidden" with two filters available
+    // leaves a student guessing which one to turn off.
     const hiddenNote = hiddenCount
-      ? `<div class="note">${hiddenCount} non-vegetarian item${hiddenCount>1?'s':''} hidden by the veg filter.</div>` : '';
+      ? `<div class="note">${hiddenFilterNote(hiddenCount)}</div>` : '';
 
     card.innerHTML = `
       <div class="meal-top">
@@ -2981,7 +3089,7 @@ async function renderMain(){
       <div class="items">
         ${shownItems.length
             ? shownItems.map(it => itemChipHtml(it, state.day, key)).join('')
-            : `<span class="chip">Nothing vegetarian on this meal</span>`}
+            : `<span class="chip">${emptyFilterNote()}</span>`}
       </div>
       ${hiddenNote}
       ${commonNote}
@@ -3410,6 +3518,16 @@ async function withMinLoadingTime(promise, minMs){
 let pendingAfterIdentity = null;
 
 function requireIdentity(next){
+  // TWO gates now, in order. Reading the menu needs neither; submitting needs both.
+  //   1. a session, because a rating belongs to an account
+  //   2. a name and roll number, because the committee has to be able to chase it
+  // Putting the session check HERE means every existing caller — the rating sheet,
+  // the complaint sheet — is gated without touching any of them.
+  if (!sb || !session || !session.user){
+    pendingAfterSignIn = next;
+    showLock('to rate a meal or report a problem');
+    return;
+  }
   if (identity && identity.name && identity.roll){ next(); return; }
   pendingAfterIdentity = next;
   openIdentity();
@@ -3646,12 +3764,12 @@ function openMealSheet(mealKey, dayName){
   const hidden = list.length - shown.length;
   document.getElementById('mealSheetItems').innerHTML =
     shown.map(it => itemChipHtml(it, day, mealKey)).join('') ||
-    `<span class="chip">Nothing vegetarian on this meal</span>`;
+    `<span class="chip">${emptyFilterNote()}</span>`;
 
   const note = document.getElementById('mealSheetNote');
   const parts = [];
   if (mess.common[mealKey]) parts.push(mess.common[mealKey]);
-  if (hidden) parts.push(`${hidden} non-vegetarian item${hidden>1?'s':''} hidden by the veg filter.`);
+  if (hidden) parts.push(hiddenFilterNote(hidden));
   note.innerHTML = parts.join('<br>');
   note.hidden = !parts.length;
 
@@ -4113,18 +4231,31 @@ const FB_KIND_ICONS  = { menu:'📋', app:'🐞', idea:'💡' };
 /* Bump alongside CACHE_VERSION in sw.js. It rides along on every bug report,
    which is the difference between "the Week tab was blank" and "the Week tab
    was blank on v29" — the second one can be checked against a diff. */
-const APP_VERSION = 'v38';
+const APP_VERSION = 'v40';
 
-// Everything is behind the sign-in lock, so this only fires when a session has
-// expired while the app sat open — rare, and confusing without a message.
-function requireSignedIn(){
+/* Reading is open; sending is not. Called two ways:
+     requireSignedIn()            -> a bare check inside a submit path, where the
+                                     session expired mid-use and a toast is right
+     requireSignedIn(fn, reason)  -> a gate in front of an action: prompts, and
+                                     runs fn once they are through */
+let pendingAfterSignIn = null;
+function requireSignedIn(next, reason){
+  // Returns TRUE and does nothing else when there is a session: the caller is
+  // mid-function and carries on by itself. Calling next() here as well sent
+  // openFeedback() straight back into openFeedback() — an infinite recursion
+  // that only showed up for a signed-in student, which is everyone who matters.
   if (sb && session && session.user) return true;
-  showToast("You're signed out — sign in again to send this.");
+  if (next){
+    pendingAfterSignIn = next;
+    showLock(reason || 'to do that');
+  } else {
+    showToast("You're signed out — sign in again to send this.");
+  }
   return false;
 }
 
 function openFeedback(kind, context){
-  if (!requireSignedIn()) return;
+  if (!requireSignedIn(() => openFeedback(kind, context), 'to send feedback')) return;
   fbContext = context || null;
   const k = FB_TITLES[kind] ? kind : 'app';
 
@@ -4794,6 +4925,7 @@ function formatWhen(ts){
          d.toLocaleTimeString('en-IN', {hour:'numeric', minute:'2-digit'});
 }
 async function openMySubmissions(){
+  if (!requireSignedIn(() => openMySubmissions(), 'to see what you have sent')) return;
   const body = document.getElementById('mySubBody');
   body.innerHTML = `<div class="empty-note">Loading…</div>`;
   document.getElementById('mySubBackdrop').classList.add('show');
@@ -5804,7 +5936,7 @@ function renderToday(){
     const past = now >= minsOf(MEAL_END[k]);
     const preview = list.length
       ? list.slice(0,3).join(' · ') + (list.length > 3 ? ` · +${list.length-3}` : '')
-      : 'Nothing vegetarian';
+      : emptyFilterNote(true);
     // Opens THIS meal, expanded. It used to call go('week'), which discarded the one
     // thing you'd just told it and made you find the meal again in the full week.
     return `<button class="mini${past ? ' done':''}" onclick="openMealSheet('${k}','${todayName}')">
@@ -5824,8 +5956,29 @@ function renderToday(){
    chicken still taking up a row is not what you asked for. Every list runs through this,
    so the filter behaves the same on the Week cards, the Now card, the rest-of-today
    previews and the meal sheet — it used to apply to exactly one of them. */
+/* What to say when a filter has emptied a list, and what to say about what it
+   removed. Three places needed this — the meal cards, the meal sheet and the
+   Rest-of-today previews — and the last two were still naming the veg filter no
+   matter which one had actually done it. */
+function emptyFilterNote(short){
+  if (vegOnly && paidOnly) return short ? 'No paid veg item' : 'No paid vegetarian item on this meal';
+  if (paidOnly)            return short ? 'Nothing to pay for' : 'Nothing to pay for on this meal';
+  return short ? 'Nothing vegetarian' : 'Nothing vegetarian on this meal';
+}
+function hiddenFilterNote(n){
+  if (!n) return '';
+  const which = vegOnly && paidOnly ? 'veg and paid filters' : paidOnly ? 'paid filter' : 'veg filter';
+  return `${n} item${n>1?'s':''} hidden by the ${which}.`;
+}
+
+/* TWO filters now, and they compose. Veg + Paid together is a real question —
+   "what can I pay for that I can actually eat" — and answers it with the likes of
+   Gobi Chilli and Panner Tikka rather than an empty screen. */
 function visibleItems(list){
-  return vegOnly ? list.filter(it => !isNonVeg(it)) : list;
+  let out = list;
+  if (vegOnly)  out = out.filter(it => !isNonVeg(it));
+  if (paidOnly) out = out.filter(it => !!getPriced(it));
+  return out;
 }
 // One place that decides what an item chip looks like, shared by the Week cards and the
 // meal sheet so the two can't drift.
@@ -5845,9 +5998,33 @@ function toggleVegOnly(){
   vegOnly = !vegOnly;
   const chip = document.getElementById('vegChip');
   if (chip) chip.classList.toggle('on', vegOnly);
+  applyFilters();
+  showToast(vegOnly ? 'Hiding non-vegetarian items' : filterToast());
+}
+
+/* The paid add-ons are the ones people hunt for: they cost money and they have to
+   be booked, so "is there chicken tonight" is a different question from "what is
+   for dinner". This answers it directly instead of making someone read every
+   card looking for a ₹. */
+function togglePaidOnly(){
+  haptic(6);
+  paidOnly = !paidOnly;
+  const chip = document.getElementById('paidChip');
+  if (chip) chip.classList.toggle('on', paidOnly);
+  applyFilters();
+  showToast(paidOnly ? 'Showing only what costs extra' : filterToast());
+}
+
+function applyFilters(){
   renderMain();
-  renderToday();   // the Now card and the day's previews honour it too now
-  showToast(vegOnly ? 'Hiding non-vegetarian items' : 'Showing everything');
+  renderToday();   // the Now card and the day's previews honour them too
+}
+// What to say when a filter is switched OFF while the other may still be on.
+function filterToast(){
+  if (vegOnly && paidOnly) return 'Paid vegetarian items only';
+  if (vegOnly)  return 'Hiding non-vegetarian items';
+  if (paidOnly) return 'Showing only what costs extra';
+  return 'Showing everything';
 }
 
 /* ================= SEARCH: HISTORY + SUGGESTIONS ================= */
@@ -6082,6 +6259,27 @@ async function renderYou(){
   const statsEl = document.getElementById('youStats');
   const body    = document.getElementById('youBody');
   if (!body) return;
+
+  /* Signed out, this tab has nothing honest to show: "your" ratings and reports
+     are tied to an account. Say so and offer the way in, rather than rendering
+     an empty page that looks broken. */
+  if (!sb || !session || !session.user){
+    if (statsEl) statsEl.innerHTML = '';
+    renderOutboxBadge(0);
+    body.innerHTML = `
+      <div class="signed-out">
+        <div class="so-ico" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <b>Your ratings and reports live here</b>
+        <p>Sign in and anything you rate or report shows up on this page, with the
+           committee&rsquo;s reply when it arrives. The menu itself stays open either way.</p>
+        <button type="button" class="now-btn" onclick="showLock('to keep track of what you have sent')">Sign in</button>
+      </div>`;
+    return;
+  }
 
   const list = await getMySubmissions();
   const ratings = list.filter(x => x.type === 'rating');
@@ -6340,8 +6538,10 @@ async function installApp(){
 (async function boot(){
   // The wordmark first: it is the only thing on screen while everything below
   // is still resolving, and it is the one piece the student is looking at.
-  try{ initTechText(); }catch(e){ /* decoration must never block the app */ }
-  try{ initSpecular(); }catch(e){ /* same: the sign-in button works without it */ }
+  // Built, then immediately parked: they decorate the sign-in prompt, which is
+  // no longer on screen at boot. showLock() starts them when it is.
+  try{ initTechText(); if (techText) techText.stop(); }catch(e){ /* decoration must never block the app */ }
+  try{ initSpecular(); if (specRim) specRim.stop(); }catch(e){ /* same: the sign-in button works without it */ }
 
   // Restore the saved mess BEFORE anything renders, or the app paints North, then
   // visibly snaps to South a frame later.
@@ -6373,6 +6573,9 @@ async function installApp(){
      sign-in button disappearing and the menu appearing. It also means a failure
      in auth leaves a working, if locked, page rather than a dead one. */
   await bootAuth();
+
+  // Used to run from afterSignIn, which no longer happens for every visitor.
+  setTimeout(maybeShowThemeTip, 900);
 })();
 </script>
 </body>
